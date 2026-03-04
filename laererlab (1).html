@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LærerLab</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --math:#1a7a6e; --math-l:#2ab89f; --math-pale:#e6f7f5;
+  --sci:#2563eb;  --sci-l:#60a5fa;  --sci-pale:#eff6ff;
+  --soc:#7c3aed;  --soc-l:#a78bfa;  --soc-pale:#f5f3ff;
+  --amber:#d97706; --amber-pale:#fffbeb;
+  --coral:#dc2626; --coral-pale:#fef2f2;
+  --green:#16a34a; --green-pale:#f0fdf4;
+  --ink:#1a1f2e; --ink-s:#4a5568; --mist:#f7f8fc; --border:#e2e8f0;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--mist);color:var(--ink);min-height:100vh}
+
+/* ── LOGIN ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:linear-gradient(145deg,#0f172a,#1e293b,#1a3a4a)}
+.login-card{background:white;border-radius:24px;padding:48px 44px;width:420px;box-shadow:var(--shadow-lg)}
+.login-logo{font-family:'Fraunces',serif;font-weight:900;font-size:2.4rem;color:var(--math)}
+.login-logo span{color:var(--ink)}
+.login-sub{font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-s);opacity:.45;margin-bottom:28px;display:block}
+.f-lbl{font-size:.78rem;font-weight:600;color:var(--ink-s);margin-bottom:5px;display:block}
+.f-inp{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;
+  font-size:.92rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;margin-bottom:14px}
+.f-inp:focus{border-color:var(--math)}
+.f-btn{width:100%;background:var(--math);color:white;border:none;border-radius:10px;
+  padding:13px;font-size:.95rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.f-btn:hover{background:var(--math-l);transform:translateY(-1px)}
+.f-err{color:var(--coral);font-size:.8rem;margin-top:8px;display:none}
+
+/* ── SHELL ── */
+#teacherApp{display:none}
+#studentApp{display:none}
+.shell{display:flex;min-height:100vh}
+
+/* ── SHARED SIDEBAR ── */
+.sb{width:256px;background:var(--ink);min-height:100vh;display:flex;flex-direction:column;
+  flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-top{padding:26px 20px 18px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.45rem;color:var(--math-l)}
+.sb-logo span{color:white}
+.sb-role{display:inline-block;font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:10px;
+  letter-spacing:.05em;text-transform:uppercase;margin-top:4px}
+.sb-role.teacher{background:var(--amber);color:white}
+.sb-role.student{background:var(--math);color:white}
+.sb-user-name{font-size:.72rem;color:rgba(255,255,255,.32);margin-top:3px}
+.sb-section{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:16px 20px 5px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;
+  color:rgba(255,255,255,.55);font-size:.85rem;transition:all .15s;border-left:3px solid transparent}
+.sb-item:hover{background:rgba(255,255,255,.06);color:white}
+.sb-item.active{background:rgba(42,184,159,.12);color:var(--math-l);border-left-color:var(--math-l)}
+.sb-topic{display:flex;align-items:center;padding:7px 20px 7px 30px;cursor:pointer;
+  color:rgba(255,255,255,.48);font-size:.82rem;transition:all .15s;border-left:3px solid transparent;gap:7px}
+.sb-topic:hover{background:rgba(255,255,255,.05);color:white}
+.sb-topic.active{background:rgba(42,184,159,.12);color:var(--math-l);border-left-color:var(--math-l)}
+.sb-topic.done-t::after{content:'✓';margin-left:auto;font-size:.68rem;color:var(--math-l);opacity:.6}
+.sb-subj-lbl{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.22);
+  padding:14px 20px 4px;display:flex;align-items:center;gap:7px}
+.sb-subj-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sb-bot{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,.07)}
+.sb-prog-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:5px}
+.sb-prog-fill{height:100%;background:var(--math-l);border-radius:2px;transition:width .5s}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:white;border-bottom:1px solid var(--border);padding:13px 28px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.bread{font-size:.78rem;color:var(--ink-s)}
+.bread strong{color:var(--ink);font-weight:600}
+.topbar-right{display:flex;gap:10px;align-items:center}
+.saved-tag{font-size:.74rem;color:var(--green);font-weight:600;opacity:0;transition:opacity .3s}
+.saved-tag.show{opacity:1}
+.badge{font-size:.72rem;font-weight:600;padding:4px 11px;border-radius:20px}
+
+.content{padding:28px 28px 80px;max-width:900px;overflow-y:auto;flex:1}
+.pg-eyebrow{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.pg-title{font-family:'Fraunces',serif;font-weight:900;font-size:2rem;letter-spacing:-1px;margin-bottom:22px}
+
+/* VIEWS & TABS */
+.view{display:none}.view.active{display:block;animation:fu .28s ease}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:22px}
+.tab{padding:9px 17px;cursor:pointer;font-size:.83rem;font-weight:500;color:var(--ink-s);
+  border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab:hover{color:var(--math)}
+.tab.active{color:var(--math);border-bottom-color:var(--math);font-weight:600}
+.panel{display:none}.panel.active{display:block;animation:fu .25s ease}
+
+/* BUTTONS */
+.btn{padding:8px 15px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;
+  border:none;font-family:'DM Sans',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--math);color:white}.btn-p:hover{background:var(--math-l)}
+.btn-s{background:var(--mist);color:var(--ink-s);border:1px solid var(--border)}.btn-s:hover{background:var(--border)}
+.btn-d{background:var(--coral-pale);color:var(--coral);border:1px solid #fecaca}.btn-d:hover{background:#fecaca}
+.btn-sm{padding:6px 11px;font-size:.76rem}.btn-xs{padding:4px 8px;font-size:.7rem}
+
+/* CARDS */
+.card{background:white;border-radius:13px;border:1px solid var(--border);box-shadow:var(--shadow)}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
+.stat-card{background:white;border-radius:12px;border:1px solid var(--border);padding:17px 19px;box-shadow:var(--shadow)}
+.stat-val{font-family:'Fraunces',serif;font-weight:900;font-size:1.9rem;line-height:1;margin-bottom:4px}
+.stat-lbl{font-size:.74rem;color:var(--ink-s)}
+
+/* SUBJECT TABS */
+.subj-tabs{display:flex;gap:7px;margin-bottom:20px;flex-wrap:wrap}
+.subj-tab{display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;cursor:pointer;
+  font-size:.85rem;font-weight:500;border:1.5px solid var(--border);background:white;color:var(--ink-s);transition:all .15s}
+.subj-tab:hover{border-color:var(--math)}
+.subj-tab.t-math.on{background:var(--math-pale);color:var(--math);border-color:var(--math)}
+.subj-tab.t-sci.on{background:var(--sci-pale);color:var(--sci);border-color:var(--sci)}
+.subj-tab.t-soc.on{background:var(--soc-pale);color:var(--soc);border-color:var(--soc)}
+.subj-tab.t-amber.on{background:var(--amber-pale);color:var(--amber);border-color:var(--amber)}
+.subj-tab-dot{width:8px;height:8px;border-radius:50%}
+
+/* TOPIC LIST (teacher) */
+.topic-item{background:white;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px;transition:box-shadow .2s}
+.topic-item:hover{box-shadow:var(--shadow-lg)}
+.topic-item-hdr{display:flex;align-items:center;gap:11px;padding:13px 17px;cursor:pointer}
+.topic-num-badge{width:27px;height:27px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.76rem;flex-shrink:0}
+.topic-name-d{flex:1;font-weight:600;font-size:.92rem}
+.topic-meta-d{font-size:.73rem;color:var(--ink-s)}
+.topic-tog{font-size:.72rem;color:var(--ink-s);transition:transform .2s}
+.topic-item.open .topic-tog{transform:rotate(180deg)}
+.topic-body{display:none;border-top:1px solid var(--border);padding:20px}
+.topic-item.open .topic-body{display:block}
+
+/* FORMS */
+.fg{margin-bottom:14px}
+.fl{font-size:.77rem;font-weight:600;color:var(--ink-s);margin-bottom:4px;display:block}
+.fi{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;
+  font-size:.88rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--math)}
+.fta{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;
+  font-size:.87rem;font-family:'DM Sans',sans-serif;outline:none;resize:vertical;min-height:72px;line-height:1.6;transition:border-color .15s}
+.fta:focus{border-color:var(--math)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.fsel{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;
+  font-size:.87rem;font-family:'DM Sans',sans-serif;outline:none;background:white;transition:border-color .15s}
+.fsel:focus{border-color:var(--math)}
+
+/* TASK/NOTE EDITORS */
+.task-ed{background:var(--mist);border-radius:9px;padding:14px;margin-bottom:9px;border:1px solid var(--border)}
+.task-ed-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.note-ed{background:var(--math-pale);border-left:3px solid var(--math);border-radius:0 8px 8px 0;padding:11px 13px;margin-bottom:8px}
+.opt-row{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.opt-radio{accent-color:var(--math);width:15px;height:15px;cursor:pointer}
+.opt-chk{accent-color:var(--math);width:15px;height:15px;cursor:pointer}
+.opt-inp{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:6px 10px;font-size:.83rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.opt-inp:focus{border-color:var(--math)}
+.mod-badge{font-size:.67rem;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--amber-pale);color:var(--amber);border:1px solid var(--amber);margin-left:6px}
+.mc-opts{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.mc-opt{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;font-size:.88rem;transition:all .15s;user-select:none}
+.mc-opt:hover{border-color:var(--math);background:var(--math-pale)}
+.mc-opt.sel{border-color:var(--math);background:var(--math-pale);font-weight:500}
+.mc-opt.correct-o{border-color:var(--green);background:var(--green-pale);color:var(--green)}
+.mc-opt.wrong-o{border-color:var(--coral);background:var(--coral-pale);color:var(--coral)}
+.mc-circ{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.62rem;flex-shrink:0;transition:all .15s}
+.tf-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.tf-btn{padding:14px;border:2px solid var(--border);border-radius:11px;text-align:center;cursor:pointer;font-size:.95rem;font-weight:600;transition:all .15s;user-select:none}
+.tf-btn:hover{transform:translateY(-1px)}
+.tf-true{border-color:var(--green)}.tf-true.sel{background:var(--green-pale);border-color:var(--green);color:var(--green)}
+.tf-false{border-color:var(--coral)}.tf-false.sel{background:var(--coral-pale);border-color:var(--coral);color:var(--coral)}
+.tf-btn.revealed-c{background:var(--green-pale);border-color:var(--green);color:var(--green)}
+.tf-btn.revealed-w{background:var(--coral-pale);border-color:var(--coral);color:var(--coral)}
+.blank-wrap{font-size:.95rem;line-height:2.8;margin-top:10px}
+.blank-inp{border:none;border-bottom:2px solid var(--math);background:transparent;font-family:'DM Sans',sans-serif;font-size:.92rem;padding:2px 6px;outline:none;min-width:80px;text-align:center;transition:border-color .2s;color:var(--ink)}
+.blank-inp.ok{border-color:var(--green);color:var(--green)}
+.blank-inp.no{border-color:var(--coral);color:var(--coral)}
+.sort-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.sort-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:white;border:1.5px solid var(--border);border-radius:9px;cursor:grab;font-size:.88rem;transition:box-shadow .15s;user-select:none}
+.sort-item:hover{border-color:var(--math)}
+.sort-item.dragging-s{opacity:.4}
+.sort-item.correct-s{border-color:var(--green);background:var(--green-pale)}
+.sort-item.wrong-s{border-color:var(--coral);background:var(--coral-pale)}
+.sort-handle{color:var(--ink-s);opacity:.3;font-size:.9rem;pointer-events:none}
+.drag-bank{display:flex;gap:8px;flex-wrap:wrap;min-height:48px;padding:10px;border:2px dashed var(--border);border-radius:10px;margin-bottom:12px;transition:border-color .2s}
+.drag-bank.over-zone{border-color:var(--math);background:var(--math-pale)}
+.drag-chip{padding:7px 14px;background:white;border:1.5px solid var(--border);border-radius:20px;cursor:grab;font-size:.85rem;font-weight:500;user-select:none;transition:all .15s;box-shadow:var(--shadow)}
+.drag-chip:hover{border-color:var(--math);transform:translateY(-1px)}
+.drag-chip.dragging-c{opacity:.4}
+.drag-chip.correct-c{border-color:var(--green);background:var(--green-pale);color:var(--green);cursor:default}
+.drag-chip.wrong-c{border-color:var(--coral);background:var(--coral-pale);color:var(--coral)}
+.drop-zone{min-height:52px;border:2px dashed var(--border);border-radius:10px;padding:8px 12px;font-size:.83rem;color:var(--ink-s);display:flex;align-items:flex-start;flex-wrap:wrap;gap:6px;transition:all .2s;margin-bottom:8px}
+.drop-zone.over-zone{border-color:var(--math);background:var(--math-pale)}
+.open-ta{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:10px 13px;font-size:.88rem;font-family:'DM Sans',sans-serif;outline:none;resize:vertical;min-height:90px;line-height:1.6;margin-top:10px;transition:border-color .15s}
+.open-ta:focus{border-color:var(--math)}
+.teacher-fb-box{background:var(--amber-pale);border:1px solid var(--amber);border-radius:9px;padding:12px 15px;margin-top:9px;font-size:.84rem;display:none}
+.teacher-fb-box.show{display:block}
+.task-img{max-width:100%;border-radius:10px;margin-bottom:10px;max-height:280px;object-fit:contain;display:block}
+.img-upload-area{border:2px dashed var(--border);border-radius:9px;padding:18px;text-align:center;cursor:pointer;transition:all .15s;background:white;margin-bottom:8px}
+.img-upload-area:hover{border-color:var(--math);background:var(--math-pale)}
+
+/* TABLE */
+.twrap{background:white;border-radius:13px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px}
+.twrap-hdr{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.twrap-hdr h3{font-family:'Fraunces',serif;font-weight:600;font-size:.96rem}
+table{width:100%;border-collapse:collapse}
+th{background:var(--mist);padding:8px 15px;text-align:left;font-size:.69rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--ink-s);border-bottom:1px solid var(--border)}
+td{padding:10px 15px;font-size:.85rem;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafcfc}
+
+/* HEATMAP */
+.hm-grid{display:grid;gap:3px}
+.hm-lbl{font-size:.73rem;color:var(--ink-s);font-weight:500;display:flex;align-items:center}
+.hm-top{font-size:.61rem;color:var(--ink-s);font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-cell{height:25px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+  font-size:.66rem;font-weight:600;cursor:pointer;transition:transform .1s}
+.hm-cell:hover{transform:scale(1.1)}
+.hm-0{background:#eef0f4;color:var(--ink-s)}.hm-1{background:#b2dbd5;color:var(--ink)}
+.hm-2{background:#5eb8aa;color:white}.hm-3{background:#2ab89f;color:white}.hm-4{background:#1a7a6e;color:white}
+
+/* PILLS */
+.pill{font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:10px;display:inline-block}
+.p-g{background:var(--green-pale);color:var(--green)}.p-a{background:var(--amber-pale);color:var(--amber)}
+.p-r{background:var(--coral-pale);color:var(--coral)}.p-gr{background:var(--mist);color:var(--ink-s);border:1px solid var(--border)}
+.p-math{background:var(--math-pale);color:var(--math)}.p-sci{background:var(--sci-pale);color:var(--sci)}
+.p-soc{background:var(--soc-pale);color:var(--soc)}
+
+/* QUIZ BUILDER */
+.qb-q{background:var(--mist);border-radius:9px;padding:14px;margin-bottom:9px;border:1px solid var(--border)}
+.qb-q-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.type-tabs{display:flex;gap:5px}
+.type-tab{padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;
+  border:1.5px solid var(--border);background:white;color:var(--ink-s);transition:all .15s}
+.type-tab.on{background:var(--math);color:white;border-color:var(--math)}
+.opt-row{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.opt-radio{accent-color:var(--math);width:15px;height:15px;cursor:pointer}
+.opt-inp{flex:1;border:1.5px solid var(--border);border-radius:7px;padding:6px 10px;font-size:.83rem;font-family:'DM Sans',sans-serif;outline:none}
+.opt-inp:focus{border-color:var(--math)}
+.exp-inp{width:100%;border:1.5px solid var(--amber);border-radius:7px;padding:7px 11px;
+  font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;background:var(--amber-pale);margin-top:7px}
+.add-dashed{width:100%;padding:11px;background:white;border:2px dashed var(--border);border-radius:9px;
+  font-size:.85rem;font-weight:600;color:var(--ink-s);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.add-dashed:hover{border-color:var(--math);color:var(--math);background:var(--math-pale)}
+
+/* QUIZ LIST ITEM */
+.quiz-li{background:white;border-radius:12px;border:1px solid var(--border);padding:14px 18px;
+  margin-bottom:9px;display:flex;align-items:center;gap:13px;box-shadow:var(--shadow)}
+.quiz-li-icon{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+
+/* STUDENT — VIDEO */
+.vid-card{background:var(--ink);border-radius:14px;overflow:hidden;margin-bottom:18px}
+.vid-ph{height:195px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;
+  background:linear-gradient(135deg,#1c2b2a,#2a3a4a)}
+.play-btn{width:52px;height:52px;background:var(--math-l);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:transform .2s,box-shadow .2s}
+.play-btn:hover{transform:scale(1.1);box-shadow:0 0 0 10px rgba(42,184,159,.15)}
+.vid-lbl{color:rgba(255,255,255,.38);font-size:.76rem}
+.vid-info{padding:12px 17px;display:flex;align-items:center;justify-content:space-between}
+.vid-title{color:white;font-weight:600;font-size:.88rem}
+.vid-meta{color:rgba(255,255,255,.35);font-size:.72rem;margin-top:2px}
+
+/* STUDENT — NOTES */
+.notes-card{background:white;border-radius:12px;padding:20px;border:1px solid var(--border)}
+.sec-h{font-family:'Fraunces',serif;font-weight:600;font-size:.98rem;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.note-blk{border-left:3px solid var(--math);padding:11px 13px;border-radius:0 8px 8px 0;font-size:.87rem;line-height:1.65;margin-bottom:9px}
+
+/* STUDENT — TASK PROGRESS RING */
+.task-ph{background:white;border-radius:12px;padding:15px 19px;margin-bottom:14px;border:1px solid var(--border);display:flex;align-items:center;gap:15px}
+.ring-w{position:relative;width:54px;height:54px;flex-shrink:0}
+.ring-w svg{transform:rotate(-90deg)}
+.rbg{fill:none;stroke:var(--border);stroke-width:5}
+.rfl{fill:none;stroke:var(--math-l);stroke-width:5;stroke-linecap:round;stroke-dasharray:141;stroke-dashoffset:141;transition:stroke-dashoffset .6s}
+.rtxt{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:700;font-size:.74rem}
+.pbar-sm{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;max-width:130px}
+.pbar-fill{height:100%;border-radius:3px;transition:width .4s}
+
+/* STUDENT — TASK CARDS */
+.tc{background:white;border-radius:11px;border:1px solid var(--border);margin-bottom:10px;overflow:hidden;transition:box-shadow .2s}
+.tc:hover{box-shadow:0 3px 14px rgba(0,0,0,.07)}
+.tc-hdr{display:flex;align-items:center;gap:10px;padding:12px 15px;cursor:pointer}
+.tnum{width:27px;height:27px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.74rem;flex-shrink:0;transition:all .2s;background:var(--mist);color:var(--ink-s)}
+.tc.done .tnum{color:white}
+.ttxt{flex:1;font-size:.89rem;font-weight:500;line-height:1.4}
+.diff{font-size:.66rem;font-weight:600;padding:2px 7px;border-radius:9px;text-transform:uppercase;letter-spacing:.04em}
+.d-easy{background:var(--math-pale);color:var(--math)}.d-medium{background:var(--amber-pale);color:var(--amber)}.d-hard{background:var(--coral-pale);color:var(--coral)}
+.tc-tog{font-size:.71rem;color:var(--ink-s);transition:transform .2s}
+.tc.open .tc-tog{transform:rotate(180deg)}
+.tc-body{display:none;padding:12px 15px 14px;border-top:1px solid var(--border)}
+.tc.open .tc-body{display:block}
+.inp-row{display:flex;gap:8px;margin-top:9px;align-items:center}
+.t-inp{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;font-size:.87rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.t-inp:focus{border-color:var(--math)}
+.task-fb{margin-top:7px;padding:8px 11px;border-radius:7px;font-size:.81rem;display:none}
+.task-fb.ok{display:block}.task-fb.no{display:block}
+.hint-blk{display:none;font-size:.78rem;margin-top:7px;padding:8px 11px;border-radius:7px}
+
+/* EVAL */
+.eval-tbl{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.eval-row{display:grid;grid-template-columns:1fr auto;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);gap:14px;transition:background .15s}
+.eval-row:last-child{border-bottom:none}
+.eval-row:hover{background:var(--mist)}
+.eval-row.hdr{background:var(--ink);color:white;font-size:.69rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:9px 16px}
+.eval-txt{font-size:.86rem;line-height:1.5}
+.eval-dots{display:flex;gap:6px;flex-shrink:0}
+.eval-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);cursor:pointer;transition:all .15s}
+.eval-dot:hover{transform:scale(1.2)}
+.eval-dot.green{border-color:#16a34a}.eval-dot.green.sel{background:#16a34a}
+.eval-dot.yellow{border-color:var(--amber)}.eval-dot.yellow.sel{background:var(--amber)}
+.eval-dot.red{border-color:var(--coral)}.eval-dot.red.sel{background:var(--coral)}
+
+/* STUDENT — QUIZ */
+.qcard{background:white;border-radius:12px;border:1px solid var(--border);padding:19px;margin-bottom:11px}
+.qnum{font-size:.69rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.qtext{font-size:.92rem;font-weight:500;margin-bottom:13px;line-height:1.55}
+.qopts{display:flex;flex-direction:column;gap:7px}
+.qopt{display:flex;align-items:center;gap:9px;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;font-size:.87rem;transition:all .15s}
+.qopt:hover{border-color:var(--math);background:var(--math-pale)}
+.qopt.selected{border-color:var(--math);background:var(--math-pale);color:var(--math);font-weight:500}
+.qopt.correct{border-color:var(--green);background:var(--green-pale);color:var(--green)}
+.qopt.wrong{border-color:var(--coral);background:var(--coral-pale);color:var(--coral)}
+.qcirc{width:20px;height:20px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.61rem;flex-shrink:0}
+.qinp{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.87rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:8px}
+.qinp:focus{border-color:var(--math)}
+.qinp.ok-i{border-color:var(--green);background:var(--green-pale)}
+.qinp.no-i{border-color:var(--coral);background:var(--coral-pale)}
+.qexp{font-size:.79rem;padding:8px 11px;border-radius:7px;margin-top:6px;display:none}
+.qexp.show{display:block}
+.qexp.ok-e{background:var(--math-pale);color:var(--math)}.qexp.no-e{background:var(--coral-pale);color:var(--coral)}
+.quiz-sub-btn{width:100%;padding:12px;background:var(--math);color:white;border:none;border-radius:10px;
+  font-size:.91rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;margin-top:6px}
+.quiz-sub-btn:hover{background:var(--math-l)}
+.qres{background:var(--ink);border-radius:14px;padding:26px;text-align:center;color:white;display:none;margin-top:14px}
+.qrs{font-family:'Fraunces',serif;font-size:2.8rem;font-weight:900;color:var(--math-l)}
+.qrb{margin-top:13px;background:var(--math);border:none;color:white;padding:10px 20px;border-radius:9px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.qlc{background:white;border-radius:12px;border:1px solid var(--border);padding:14px 17px;margin-bottom:9px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s}
+.qlc:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);border-color:var(--math-l)}
+
+/* AI ASSISTANT */
+.ai-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:20px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-size:.77rem;font-weight:600;
+  cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;margin-top:9px}
+.ai-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(99,102,241,.3)}
+.ai-panel{display:none;margin-top:11px;background:white;border-radius:13px;border:1px solid #e0e7ff;box-shadow:0 4px 20px rgba(99,102,241,.1);overflow:hidden}
+.ai-panel.open{display:block;animation:fu .2s ease}
+.ai-phdr{background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:11px 15px;display:flex;align-items:center;justify-content:space-between}
+.ai-phdr-l{display:flex;align-items:center;gap:8px;color:white}
+.ai-ptitle{font-weight:600;font-size:.84rem}
+.ai-psub{font-size:.69rem;opacity:.7}
+.ai-close{color:rgba(255,255,255,.65);cursor:pointer;font-size:.82rem;padding:2px 6px;border-radius:4px;transition:background .15s}
+.ai-close:hover{background:rgba(255,255,255,.15);color:white}
+.ai-msgs{padding:12px 14px;max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:9px}
+.ai-msg{display:flex;gap:8px;align-items:flex-start;animation:fu .18s ease}
+.ai-msg.u{flex-direction:row-reverse}
+.ai-av{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0;margin-top:1px}
+.ai-av.bot{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white}
+.ai-av.user{background:var(--mist);border:1px solid var(--border)}
+.ai-bub{padding:8px 12px;border-radius:10px;font-size:.83rem;line-height:1.6;max-width:86%}
+.ai-bub.bot{background:#f5f3ff;color:var(--ink);border-bottom-left-radius:3px}
+.ai-bub.user{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border-bottom-right-radius:3px}
+.ai-bub.typing span{display:inline-block;animation:bounce .9s infinite}
+.ai-bub.typing span:nth-child(2){animation-delay:.15s}
+.ai-bub.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.ai-quick-btns{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 9px}
+.ai-quick{padding:4px 11px;border-radius:20px;font-size:.74rem;font-weight:500;cursor:pointer;
+  border:1.5px solid #e0e7ff;background:white;color:#6366f1;transition:all .15s;font-family:'DM Sans',sans-serif}
+.ai-quick:hover{background:#f5f3ff;border-color:#6366f1}
+.ai-inp-row{display:flex;gap:7px;padding:9px 13px;border-top:1px solid #f0f0ff}
+.ai-inp{flex:1;border:1.5px solid #e0e7ff;border-radius:8px;padding:7px 11px;font-size:.84rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.ai-inp:focus{border-color:#6366f1}
+.ai-send{padding:7px 13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;font-size:.81rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.ai-send:disabled{opacity:.45;cursor:not-allowed}
+.api-setup{background:#f5f3ff;border-radius:9px;padding:13px 14px;margin:9px 14px;border:1px solid #e0e7ff;font-size:.81rem;color:var(--ink-s);line-height:1.6}
+.api-setup strong{color:#6366f1;display:block;margin-bottom:5px}
+.api-key-inp{width:100%;border:1.5px solid #e0e7ff;border-radius:7px;padding:7px 10px;font-size:.81rem;font-family:'DM Sans',sans-serif;outline:none;margin:7px 0 5px}
+.api-save-btn{background:#6366f1;color:white;border:none;border-radius:7px;padding:5px 13px;font-size:.77rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-ov.show{display:flex}
+.modal{background:white;border-radius:18px;padding:26px;width:540px;max-height:84vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-x{float:right;font-size:1.1rem;cursor:pointer;color:var(--ink-s)}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:white;padding:11px 18px;
+  border-radius:9px;font-size:.83rem;transform:translateY(60px);opacity:0;transition:all .3s;z-index:200;max-width:280px}
+.toast.show{transform:translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">Lærer<span>Lab</span></div>
+    <span class="login-sub">Logg inn for å fortsette</span>
+    <label class="f-lbl">Brukernavn</label>
+    <input class="f-inp" id="loginUser" placeholder="brukernavn" onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="f-lbl">Passord</label>
+    <input class="f-inp" type="password" id="loginPass" placeholder="Passord..." onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="f-btn" onclick="doLogin()">Logg inn</button>
+    <div class="f-err" id="loginErr">Feil brukernavn eller passord.</div>
+    <div style="text-align:center;margin-top:13px;font-size:.74rem;color:var(--ink-s);opacity:.4">Lærer: laerer / laerer123</div>
+  </div>
+</div>
+
+<!-- ══ TEACHER APP ══ -->
+<div id="teacherApp">
+<div class="shell">
+  <aside class="sb" id="teacherSb">
+    <div class="sb-top">
+      <div class="sb-logo">Lærer<span>Lab</span></div>
+      <div class="sb-role teacher">Lærer</div>
+    </div>
+    <div class="sb-section">Oversikt</div>
+    <div class="sb-item active" onclick="tView('dashboard',this)"><span>📊</span> Dashboard</div>
+    <div class="sb-item" onclick="tView('students',this)"><span>👥</span> Elever</div>
+    <div class="sb-item" onclick="tView('heatmap',this)"><span>🗺️</span> Klasseoversikt</div>
+    <div class="sb-section">Innhold</div>
+    <div class="sb-item" onclick="tView('content',this)"><span>✏️</span> Rediger innhold</div>
+    <div class="sb-section">Prøver</div>
+    <div class="sb-item" onclick="tView('quizbuilder',this)"><span>📝</span> Lag prøve</div>
+    <div class="sb-item" onclick="tView('quizlist',this)"><span>📋</span> Mine prøver</div>
+    <div class="sb-item" onclick="tView('results',this)"><span>📈</span> Resultater</div>
+    <div class="sb-section">Admin</div>
+    <div class="sb-item" onclick="tView('addstudent',this)"><span>➕</span> Legg til elev</div>
+    <div class="sb-item" onclick="tView('settings',this)"><span>⚙️</span> Innstillinger</div>
+    <div class="sb-bot"><div style="font-size:.71rem;color:rgba(255,255,255,.2);cursor:pointer" onclick="doLogout()">🚪 Logg ut</div></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="bread">LærerLab &nbsp;›&nbsp; <strong id="tViewName">Dashboard</strong></div>
+      <div class="topbar-right">
+        <span class="saved-tag" id="savedTag">✓ Lagret</span>
+        <span style="font-size:.77rem;color:var(--ink-s)" id="classInfo"></span>
+      </div>
+    </div>
+    <div class="content" id="teacherContent">
+      <div class="view active" id="tv-dashboard"></div>
+      <div class="view" id="tv-content"></div>
+      <div class="view" id="tv-students"></div>
+      <div class="view" id="tv-heatmap"></div>
+      <div class="view" id="tv-quizbuilder"></div>
+      <div class="view" id="tv-quizlist"></div>
+      <div class="view" id="tv-results"></div>
+      <div class="view" id="tv-addstudent"></div>
+      <div class="view" id="tv-settings"></div>
+    </div>
+  </main>
+</div>
+</div>
+
+<!-- ══ STUDENT APP ══ -->
+<div id="studentApp">
+<div class="shell">
+  <aside class="sb" id="studentSb">
+    <div class="sb-top">
+      <div class="sb-logo">Lærer<span>Lab</span></div>
+      <div class="sb-role student">Elev</div>
+      <div class="sb-user-name" id="sbStudentName"></div>
+    </div>
+    <div id="studentNav"></div>
+    <div class="sb-section">Prøver</div>
+    <div class="sb-item" id="navQuizBtn" onclick="sShowQuizList()"><span>📝</span> Mine prøver</div>
+    <div class="sb-bot">
+      <div style="font-size:.7rem;color:rgba(255,255,255,.24);margin-bottom:4px">Total fremgang</div>
+      <div class="sb-prog-bar"><div class="sb-prog-fill" id="sbFill" style="width:0%"></div></div>
+      <div style="font-size:.67rem;color:rgba(255,255,255,.18);margin-top:4px" id="sbPct">0%</div>
+      <div style="margin-top:11px;font-size:.71rem;color:rgba(255,255,255,.2);cursor:pointer" onclick="doLogout()">🚪 Logg ut</div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="bread"><strong id="sTopicName">—</strong></div>
+      <div class="badge" id="sTopicBadge" style="background:var(--math-pale);color:var(--math)"></div>
+    </div>
+    <div class="content" id="studentContent">
+      <!-- topic view -->
+      <div id="sTopicView">
+        <div class="pg-eyebrow" id="sPgEyebrow"></div>
+        <h1 class="pg-title" id="sPgTitle"></h1>
+        <div class="tabs">
+          <div class="tab active" onclick="sTab('fore')">🎬 Forelesning</div>
+          <div class="tab" onclick="sTab('opp')">✏️ Oppgaver</div>
+          <div class="tab" onclick="sTab('eval')">🎯 Egenvurdering</div>
+        </div>
+        <div class="panel active" id="sp-fore"></div>
+        <div class="panel" id="sp-opp"></div>
+        <div class="panel" id="sp-eval"></div>
+      </div>
+      <!-- quiz list -->
+      <div id="sQuizList" style="display:none">
+        <div class="pg-eyebrow" style="color:var(--math)">Prøver</div>
+        <h1 class="pg-title">Mine prøver</h1>
+        <div id="sQuizListContent"></div>
+      </div>
+      <!-- active quiz -->
+      <div id="sQuizActive" style="display:none">
+        <div id="sQuizContent"></div>
+      </div>
+    </div>
+  </main>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="mainModal"><div class="modal"><span class="modal-x" onclick="closeModal()">✕</span><div id="modalContent"></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// ▼▼▼ API-NØKKEL — lim inn din nøkkel her ▼▼▼
+const AI_KEY = 'din-api-nøkkel-her';
+// ▲▲▲
+// ══════════════════════════════════════════════
+
+// ── DATA ──
+const LS={get:k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+function getSubjects(){return LS.get('ll_subjects')||getDefaultSubjects();}
+function setSubjects(s){LS.set('ll_subjects',s);}
+function getStudents(){return LS.get('ll_students')||[];}
+function setStudents(s){LS.set('ll_students',s);}
+function getQuizzes(){return LS.get('ll_quizzes')||[];}
+function setQuizzes(q){LS.set('ll_quizzes',q);}
+function getSettings(){return LS.get('ll_settings')||{className:'9A',teacherPass:'laerer123'};}
+function logAct(user,type,data={}){const l=LS.get('ll_log')||[];l.unshift({user,type,data,ts:Date.now()});LS.set('ll_log',l.slice(0,300));}
+
+function getDefaultSubjects(){
+  const s=[
+    {id:'math',name:'Matematikk',color:'math',topics:[
+      {id:'m1',name:'Tall og tallforståelse',videoUrl:'',videoTitle:'Introduksjon til tall',
+        notes:[{text:'Hele tall er positive og negative tall uten desimaler.'},{text:'Primtall er tall som bare er delelig med 1 og seg selv: 2, 3, 5, 7...'}],
+        tasks:[{q:'Hva er det minste primtallet?',ans:2,diff:'easy',hint:'Det er det eneste partallet som er primtall.'},{q:'Hva er 15 × 8?',ans:120,diff:'easy',hint:'15 × 8 = 15 × 4 × 2'},{q:'Kvadratroten av 144?',ans:12,diff:'medium',hint:'Hvilket tall × seg selv = 144?'}]},
+      {id:'m2',name:'Prosent og rente',videoUrl:'',videoTitle:'Prosent og rente',
+        notes:[{text:'Prosent betyr "per hundre". 40% = 0,4 som desimaltall.'},{text:'Rente er prisen for å låne eller spare penger.'}],
+        tasks:[{q:'Hva er 25% av 200?',ans:50,diff:'easy',hint:'0,25 × 200 = ?'},{q:'Vare koster 400 kr, satt ned 30%. Ny pris?',ans:280,diff:'easy',hint:'400 − (0,30 × 400)'},{q:'Pris øker fra 600 til 750 kr. Prosentøkning?',ans:25,diff:'hard',hint:'(150÷600)×100 = ?'}]},
+      {id:'m3',name:'Algebra',videoUrl:'',videoTitle:'Introduksjon til algebra',
+        notes:[{text:'I algebra bruker vi bokstaver som variabler for ukjente tall.'},{text:'En likning er to uttrykk som er like, f.eks. 2x + 3 = 11.'}],
+        tasks:[{q:'Løs: x + 7 = 15. Hva er x?',ans:8,diff:'easy',hint:'x = 15 − 7'},{q:'Løs: 3x = 24. Hva er x?',ans:8,diff:'easy',hint:'x = 24 ÷ 3'},{q:'Løs: 2x + 5 = 19. Hva er x?',ans:7,diff:'medium',hint:'2x = 14, x = ?'}]},
+    ]},
+    {id:'sci',name:'Naturfag',color:'sci',topics:[
+      {id:'s1',name:'Celler og arv',videoUrl:'',videoTitle:'Celler og arv',
+        notes:[{text:'Alle levende organismer er bygd opp av celler.'},{text:'DNA inneholder den genetiske informasjonen som arves fra foreldre til barn.'}],
+        tasks:[{q:'Hvor mange kromosomer har en menneskecelle?',ans:46,diff:'medium',hint:'Vi arver halvparten fra mor og halvparten fra far.'},{q:'Hvor mange par av kromosomer har en menneskecelle?',ans:23,diff:'easy',hint:'46 ÷ 2 = ?'}]},
+      {id:'s2',name:'Kjemi og stoffer',videoUrl:'',videoTitle:'Kjemi og stoffer',
+        notes:[{text:'Et grunnstoff inneholder bare én type atom. Det finnes 118 kjente grunnstoff.'},{text:'Et molekyl er to eller flere atomer bundet sammen kjemisk.'}],
+        tasks:[{q:'Hvor mange atomer er det i ett H₂O-molekyl?',ans:3,diff:'easy',hint:'2 hydrogenatomer + 1 oksygenatom'},{q:'Hva er atomnummeret til karbon (C)?',ans:6,diff:'medium',hint:'Atomnummer = antall protoner i kjernen.'}]},
+    ]},
+    {id:'soc',name:'Samfunnsfag',color:'soc',topics:[
+      {id:'so1',name:'Demokrati og politikk',videoUrl:'',videoTitle:'Demokrati og politikk',
+        notes:[{text:'Demokrati betyr folkestyre. Norge er et representativt demokrati.'},{text:'Stortinget er Norges øverste folkevalgte organ.'}],
+        tasks:[{q:'Hvor mange representanter sitter i Stortinget?',ans:169,diff:'easy',hint:'Stortinget har representanter fra alle fylkene.'},{q:'Hvert hvor mange år er det stortingsvalg i Norge?',ans:4,diff:'easy',hint:'Valgperioden er fast bestemt.'}]},
+      {id:'so2',name:'Økonomi og næringsliv',videoUrl:'',videoTitle:'Økonomi og næringsliv',
+        notes:[{text:'BNP er summen av alle varer og tjenester produsert i et land på ett år.'},{text:'Inflasjon er prisstigning over tid.'}],
+        tasks:[{q:'Hvis inflasjonen er 5% og du har 1000 kr, hva er kjøpekraften neste år?',ans:950,diff:'medium',hint:'1000 − (5% av 1000) = ?'},{q:'Hva er 10% av 8500 kr?',ans:850,diff:'easy',hint:'8500 × 0,10 = ?'}]},
+    ]},
+  ];
+  setSubjects(s);
+  return s;
+}
+
+// ── AUTH ──
+let currentUser=null;
+let isTeacher=false;
+
+window.doLogin=()=>{
+  const u=document.getElementById('loginUser').value.trim().toLowerCase();
+  const p=document.getElementById('loginPass').value.trim();
+  const st=getSettings();
+  // Teacher?
+  if((u==='laerer'||u==='lærer')&&(p===st.teacherPass||p==='laerer123'||p==='lærer123')){
+    isTeacher=true; currentUser={name:'Lærer',role:'teacher'};
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('teacherApp').style.display='block';
+    document.getElementById('classInfo').textContent=st.className||'9A';
+    initTeacher(); return;
+  }
+  // Student?
+  const stu=getStudents().find(s=>s.username.toLowerCase()===u&&s.password===p);
+  if(stu){
+    isTeacher=false; currentUser=stu;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('studentApp').style.display='block';
+    document.getElementById('sbStudentName').textContent=stu.name;
+    logAct(stu.name,'login');
+    initStudent(); return;
+  }
+  document.getElementById('loginErr').style.display='block';
+};
+
+window.doLogout=()=>{
+  currentUser=null;
+  document.getElementById('teacherApp').style.display='none';
+  document.getElementById('studentApp').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').style.display='none';
+};
+
+// ══════════════════════════════════════════════
+// TEACHER
+// ══════════════════════════════════════════════
+let tContentSubj=null; let tHmSubj=null; let qbQs=[];
+
+function initTeacher(){
+  const s=getSubjects(); tContentSubj=s[0]?.id; tHmSubj=s[0]?.id;
+  populateQbSubjects();
+  tView('dashboard',document.querySelector('#teacherSb .sb-item'));
+}
+
+window.tView=(name,el)=>{
+  document.querySelectorAll('#tv-dashboard,#tv-content,#tv-students,#tv-heatmap,#tv-quizbuilder,#tv-quizlist,#tv-results,#tv-addstudent,#tv-settings').forEach(v=>v.classList.remove('active'));
+  document.getElementById('tv-'+name).classList.add('active');
+  document.querySelectorAll('#teacherSb .sb-item').forEach(i=>i.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const nm={dashboard:'Dashboard',content:'Rediger innhold',students:'Alle elever',heatmap:'Klasseoversikt',quizbuilder:'Lag prøve',quizlist:'Mine prøver',results:'Resultater',addstudent:'Legg til elev',settings:'Innstillinger'};
+  document.getElementById('tViewName').textContent=nm[name]||name;
+  if(name==='dashboard')  renderTDashboard();
+  if(name==='content')    renderTContent();
+  if(name==='students')   renderTStudents();
+  if(name==='heatmap')    renderTHeatmap();
+  if(name==='quizlist')   renderTQuizList();
+  if(name==='results')    renderTResults('overview');
+  if(name==='addstudent') renderTAddStudent();
+  if(name==='settings')   renderTSettings();
+  if(name==='quizbuilder'){renderQbForm();}
+};
+
+// helpers
+function getStudentPct(sid){
+  const subjs=getSubjects(); let tot=0,done=0;
+  subjs.forEach(subj=>subj.topics.forEach((_,ti)=>{const p=LS.get(`ll_p_${sid}_${subj.id}_${ti}`)||[];tot+=subj.topics[ti].tasks.length;done+=p.length;}));
+  return tot?Math.round(done/tot*100):0;
+}
+function getTopicPct(sid,subjId,ti){
+  const subj=getSubjects().find(s=>s.id===subjId); if(!subj||!subj.topics[ti]) return 0;
+  const p=LS.get(`ll_p_${sid}_${subjId}_${ti}`)||[];
+  return subj.topics[ti].tasks.length?Math.round(p.length/subj.topics[ti].tasks.length*100):0;
+}
+function ppill(p){return p>=70?`<span class="pill p-g">${p}%</span>`:p>=30?`<span class="pill p-a">${p}%</span>`:`<span class="pill p-r">${p}%</span>`;}
+function fmtTs(ts){if(!ts)return'—';const d=Date.now()-ts;if(d<60000)return'Nå';if(d<3600000)return Math.floor(d/60000)+' min siden';if(d<86400000)return Math.floor(d/3600000)+' t siden';return new Date(ts).toLocaleDateString('no-NO',{day:'2-digit',month:'short'});}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function showSaved(){const e=document.getElementById('savedTag');e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2500);}
+window.closeModal=()=>document.getElementById('mainModal').classList.remove('show');
+document.getElementById('mainModal').addEventListener('click',e=>{if(e.target===document.getElementById('mainModal'))closeModal();});
+
+// DASHBOARD
+function renderTDashboard(){
+  const students=getStudents(),quizzes=getQuizzes(),subjects=getSubjects();
+  let qr=0; students.forEach(s=>quizzes.forEach(q=>{if(LS.get(`ll_qr_${s.id}_${q.id}`))qr++;}));
+  const avg=students.length?Math.round(students.reduce((a,s)=>a+getStudentPct(s.id),0)/students.length):0;
+  const log=LS.get('ll_log')||[];
+  const tmap={login:'Logget inn',view_topic:'Åpnet tema',task_done:'Oppgave ✓',quiz_done:'Prøve levert',eval_saved:'Egenvurdering'};
+  const att=students.filter(s=>getStudentPct(s.id)<30);
+  document.getElementById('tv-dashboard').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Oversikt</div>
+    <div class="pg-title">Dashboard</div>
+    <div class="stat-grid">
+      <div class="stat-card" style="border-top:3px solid var(--math)"><div style="font-size:1.2rem;margin-bottom:6px">👥</div><div class="stat-val">${students.length}</div><div class="stat-lbl">Elever</div></div>
+      <div class="stat-card" style="border-top:3px solid var(--sci)"><div style="font-size:1.2rem;margin-bottom:6px">📚</div><div class="stat-val">${subjects.length}</div><div class="stat-lbl">Fag</div></div>
+      <div class="stat-card" style="border-top:3px solid var(--amber)"><div style="font-size:1.2rem;margin-bottom:6px">📝</div><div class="stat-val">${quizzes.length}</div><div class="stat-lbl">Prøver</div></div>
+      <div class="stat-card" style="border-top:3px solid var(--soc)"><div style="font-size:1.2rem;margin-bottom:6px">📊</div><div class="stat-val">${avg}%</div><div class="stat-lbl">Snitt fremgang</div></div>
+    </div>
+    <div class="twrap"><div class="twrap-hdr"><h3>Siste aktivitet</h3></div>
+      <table><thead><tr><th>Elev</th><th>Hendelse</th><th>Detaljer</th><th>Tidspunkt</th></tr></thead>
+      <tbody>${log.slice(0,10).map(e=>`<tr><td style="font-weight:600">${e.user}</td><td>${tmap[e.type]||e.type}</td><td style="font-size:.79rem;color:var(--ink-s)">${e.data?.topic||e.data?.subject||e.data?.quizTitle||'—'}</td><td style="font-size:.77rem;color:var(--ink-s)">${fmtTs(e.ts)}</td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--ink-s);padding:14px">Ingen aktivitet ennå</td></tr>'}</tbody>
+      </table></div>
+    <div class="twrap"><div class="twrap-hdr"><h3>Trenger oppfølging</h3><span style="font-size:.75rem;color:var(--ink-s)">Under 30%</span></div>
+      <table><thead><tr><th>Elev</th><th>Fremgang</th><th></th></tr></thead>
+      <tbody>${att.length?att.map(s=>`<tr><td style="font-weight:600">${s.name}</td><td>${ppill(getStudentPct(s.id))}</td><td><button class="btn btn-s btn-xs" onclick="openStudentModal('${s.id}')">Detaljer</button></td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--math);padding:14px">🎉 Alle elever er godt i gang!</td></tr>'}</tbody>
+    </table></div>`;
+}
+
+// CONTENT EDITOR
+window.setTContentSubj=id=>{tContentSubj=id;renderTContent();};
+function renderTContent(){
+  const subjects=getSubjects(); const subj=subjects.find(s=>s.id===tContentSubj)||subjects[0];
+  if(!subj){document.getElementById('tv-content').innerHTML='<p>Ingen fag ennå. Legg til fag under Innstillinger.</p>';return;}
+  tContentSubj=subj.id;
+  let html=`<div class="pg-eyebrow" style="color:var(--${subj.color})">Innhold</div>
+  <div class="pg-title">Rediger innhold</div>
+  <div class="subj-tabs">${subjects.map(s=>`<div class="subj-tab t-${s.color}${s.id===subj.id?' on':''}" onclick="setTContentSubj('${s.id}')"><div class="subj-tab-dot" style="background:var(--${s.color}-l)"></div>${s.name}</div>`).join('')}</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-family:Fraunces,serif;font-weight:700;font-size:1.2rem">${subj.topics.length} temaer i ${subj.name}</div>
+    <button class="btn btn-p btn-sm" onclick="addTopic('${subj.id}')">+ Nytt tema</button>
+  </div>`;
+  subj.topics.forEach((topic,ti)=>{
+    html+=`<div class="topic-item" id="ti_${subj.id}_${ti}">
+      <div class="topic-item-hdr" onclick="togTopic('${subj.id}',${ti})">
+        <div class="topic-num-badge" style="background:var(--${subj.color}-pale);color:var(--${subj.color})">${ti+1}</div>
+        <div class="topic-name-d">${topic.name}${topic.module?`<span class="mod-badge">${escH(topic.module)}</span>`:''}</div>
+        <div class="topic-meta-d">${topic.tasks.length} oppg.</div>
+        <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+          <button class="btn btn-d btn-xs" onclick="deleteTopic('${subj.id}',${ti})">Slett</button>
+        </div>
+        <div class="topic-tog">▼</div>
+      </div>
+      <div class="topic-body">
+        <div class="fg"><label class="fl">Temanavn</label>
+          <input class="fi" value="${escH(topic.name)}" onchange="updateTF('${subj.id}',${ti},'name',this.value)"></div>
+        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
+          <div style="font-weight:600;font-size:.87rem;margin-bottom:10px">🎬 Video</div>
+          <div class="frow">
+            <div class="fg" style="margin:0"><label class="fl">Videotittel</label>
+              <input class="fi" value="${escH(topic.videoTitle||'')}" placeholder="Tittel på video..." onchange="updateTF('${subj.id}',${ti},'videoTitle',this.value)"></div>
+            <div class="fg" style="margin:0"><label class="fl">Video-URL (YouTube/Vimeo)</label>
+              <input class="fi" value="${escH(topic.videoUrl||'')}" placeholder="https://youtube.com/..." onchange="updateTF('${subj.id}',${ti},'videoUrl',this.value)"></div>
+          </div>
+        </div>
+        <!-- REGLER -->
+        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-weight:600;font-size:.87rem">📏 Regler</div>
+            <button class="btn btn-s btn-xs" onclick="addRule('${subj.id}',${ti})">+ Regel</button>
+          </div>
+          <div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">Vises som tydelige regelblokker for elevene. Du kan ha så mange du vil.</div>
+          ${(topic.rules||[]).map((r,ri)=>`
+            <div style="display:flex;gap:8px;margin-bottom:7px;border-left:3px solid var(--${subj.color});padding-left:10px">
+              <textarea class="fta" style="min-height:48px;flex:1" rows="2" onchange="updRule('${subj.id}',${ti},${ri},this.value)">${escH(r.text)}</textarea>
+              <button class="btn btn-d btn-xs" style="flex-shrink:0;margin-top:2px" onclick="delRule('${subj.id}',${ti},${ri})">✕</button>
+            </div>`).join('')}
+        </div>
+
+        <!-- EKSEMPLER -->
+        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-weight:600;font-size:.87rem">💡 Eksempler</div>
+            <button class="btn btn-s btn-xs" onclick="addExample('${subj.id}',${ti})">+ Eksempel</button>
+          </div>
+          <div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">Vises som eksempelblokker. Gi hvert eksempel en tittel og forklaring.</div>
+          ${(topic.examples||[]).map((ex,exi)=>`
+            <div style="background:var(--${subj.color}-pale);border-radius:8px;padding:11px;margin-bottom:8px;border:1px solid var(--border)">
+              <div style="display:flex;gap:8px;margin-bottom:7px">
+                <input class="fi" style="flex:1" placeholder="Tittel (f.eks. Eksempel 1)" value="${escH(ex.title||'')}" onchange="updEx('${subj.id}',${ti},${exi},'title',this.value)">
+                <button class="btn btn-d btn-xs" style="flex-shrink:0" onclick="delEx('${subj.id}',${ti},${exi})">✕</button>
+              </div>
+              <textarea class="fta" style="min-height:60px" rows="3" placeholder="Eksempeltekst..." onchange="updEx('${subj.id}',${ti},${exi},'text',this.value)">${escH(ex.text||'')}</textarea>
+            </div>`).join('')}
+        </div>
+
+        <!-- BILDE I FORELESNING -->
+        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
+          <div style="font-weight:600;font-size:.87rem;margin-bottom:10px">🖼️ Bilde i forelesning</div>
+          <div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">Valgfritt bilde som vises under regler og eksempler.</div>
+          <div class="img-upload-area" onclick="document.getElementById('foreimg_${subj.id}_${ti}').click()">
+            ${topic.foreImage
+              ? `<img src="${topic.foreImage}" style="max-height:140px;border-radius:7px;max-width:100%"><div style="font-size:.74rem;color:var(--ink-s);margin-top:6px">Klikk for å bytte bilde</div>`
+              : `<div style="font-size:1.5rem">📷</div><div style="font-size:.8rem;color:var(--ink-s);margin-top:5px">Klikk for å laste opp bilde</div>`}
+          </div>
+          <input type="file" id="foreimg_${subj.id}_${ti}" accept="image/*" style="display:none" onchange="uploadForeImg('${subj.id}',${ti},this)">
+          ${topic.foreImage?`<button class="btn btn-d btn-xs" style="margin-top:7px" onclick="updTF('${subj.id}',${ti},'foreImage','');renderTContent()">🗑 Fjern bilde</button>`:''}
+        </div>
+
+        <!-- MODULE TAG -->
+        <div class="fg"><label class="fl">Modul / nivå (vises som merkelapp, f.eks. Modul A, Spor 2)</label>
+          <input class="fi" value="${escH(topic.module||'')}" placeholder="F.eks. Modul A" onchange="updateTF('${subj.id}',${ti},'module',this.value)"></div>
+
+        <!-- TASKS -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <div style="font-weight:600;font-size:.87rem">✏️ Oppgaver</div>
+            <button class="btn btn-s btn-xs" onclick="addTask('${subj.id}',${ti})">+ Oppgave</button>
+          </div>
+          ${topic.tasks.map((task,tki)=>{
+            const tid=task.type||'num';
+            const typeOpts=['num','mc','mcmulti','tf','fill','sort','drag','open','image'].map(t=>{
+              const labels={num:'🔢 Tallsvar',mc:'🔘 Flervalg (1 svar)',mcmulti:'☑️ Flervalg (flere svar)',tf:'✅ Sant/Usant',fill:'✍️ Fyll inn ord',sort:'📊 Sortering',drag:'🔀 Dra og slipp',open:'📄 Åpen oppgave',image:'🖼️ Bilde-oppgave'};
+              return `<option value="${t}"${tid===t?' selected':''}>${labels[t]}</option>`;
+            }).join('');
+            let typeFields='';
+            if(tid==='num') typeFields=`<div class="frow"><div class="fg" style="margin:0"><label class="fl">Riktig svar (tall)</label><input class="fi" type="number" value="${task.ans||0}" onchange="updateTaskF('${subj.id}',${ti},${tki},'ans',parseFloat(this.value))"></div><div class="fg" style="margin:0"><label class="fl">Hint</label><input class="fi" value="${escH(task.hint||'')}" placeholder="Valgfritt hint..." onchange="updateTaskF('${subj.id}',${ti},${tki},'hint',this.value)"></div></div>`;
+            if(tid==='mc') typeFields=`<div style="margin-bottom:8px"><label class="fl">Alternativer — merk riktig svar</label>${[0,1,2,3].map(oi=>`<div class="opt-row"><input type="radio" class="opt-radio" name="mc_${subj.id}_${ti}_${tki}" ${task.correct===oi?'checked':''} onchange="updateTaskF('${subj.id}',${ti},${tki},'correct',${oi})"><input class="opt-inp" placeholder="Alt. ${String.fromCharCode(65+oi)}" value="${escH((task.opts&&task.opts[oi])||'')}" onchange="updOpt('${subj.id}',${ti},${tki},${oi},this.value)"></div>`).join('')}</div><div class="fg" style="margin:0"><label class="fl">Hint</label><input class="fi" value="${escH(task.hint||'')}" onchange="updateTaskF('${subj.id}',${ti},${tki},'hint',this.value)"></div>`;
+            if(tid==='mcmulti') typeFields=`<div style="margin-bottom:8px"><label class="fl">Alternativer — merk ALLE riktige svar</label>${[0,1,2,3].map(oi=>`<div class="opt-row"><input type="checkbox" class="opt-chk" ${(task.correct||[]).includes(oi)?'checked':''} onchange="updMCM('${subj.id}',${ti},${tki},${oi},this.checked)"><input class="opt-inp" placeholder="Alt. ${String.fromCharCode(65+oi)}" value="${escH((task.opts&&task.opts[oi])||'')}" onchange="updOpt('${subj.id}',${ti},${tki},${oi},this.value)"></div>`).join('')}</div>`;
+            if(tid==='tf') typeFields=`<div class="fg"><label class="fl">Riktig svar</label><select class="fsel" onchange="updateTaskF('${subj.id}',${ti},${tki},'correct',this.value==='true')"><option value="true" ${task.correct===true?'selected':''}>✅ Sant</option><option value="false" ${task.correct===false?'selected':''}>❌ Usant</option></select></div><div class="fg"><label class="fl">Hint</label><input class="fi" value="${escH(task.hint||'')}" onchange="updateTaskF('${subj.id}',${ti},${tki},'hint',this.value)"></div>`;
+            if(tid==='fill') typeFields=`<div class="fg"><label class="fl">Tekst — bruk ___ der elevene skal fylle inn</label><textarea class="fta" rows="2" onchange="updateTaskF('${subj.id}',${ti},${tki},'q',this.value)">${escH(task.q||'')}</textarea></div><div class="fg" style="margin:0"><label class="fl">Riktige svar (kommaseparert, ett per ___)</label><input class="fi" value="${(task.blanks||[]).join(',')}" placeholder="svar1,svar2" onchange="updateTaskF('${subj.id}',${ti},${tki},'blanks',this.value.split(',').map(s=>s.trim()))"></div>`;
+            if(tid==='sort') typeFields=`<div class="fg"><label class="fl">Elementer i RIKTIG rekkefølge (skill med |)</label><input class="fi" value="${(task.correct||[]).join('|')}" placeholder="Minst|Middels|Størst" onchange="setSortTask('${subj.id}',${ti},${tki},this.value)"></div>`;
+            if(tid==='drag') typeFields=`<div class="fg"><label class="fl">Ord/elementer å dra (skill med |)</label><input class="fi" value="${(task.items||[]).join('|')}" placeholder="Ord1|Ord2|Ord3" onchange="updateTaskF('${subj.id}',${ti},${tki},'items',this.value.split('|').map(s=>s.trim()))"></div><div class="fg" style="margin:0"><label class="fl">Kategorier (skill med |)</label><input class="fi" value="${(task.zones||[]).join('|')}" placeholder="Kategori A|Kategori B" onchange="updateTaskF('${subj.id}',${ti},${tki},'zones',this.value.split('|').map(s=>s.trim()))"></div>`;
+            if(tid==='open') typeFields=`<div class="fg"><label class="fl">Veiledning til eleven (vises under spørsmålet)</label><input class="fi" value="${escH(task.guidance||'')}" placeholder="F.eks: Skriv minst 3 setninger..." onchange="updateTaskF('${subj.id}',${ti},${tki},'guidance',this.value)"></div>`;
+            if(tid==='image') typeFields=`<div class="fg"><label class="fl">Last opp bilde</label><div class="img-upload-area" onclick="document.getElementById('timg_${subj.id}_${ti}_${tki}').click()">${task.imageData?`<img src="${task.imageData}" style="max-height:120px;border-radius:6px">`:`<div style="font-size:1.4rem">📷</div><div style="font-size:.78rem;color:var(--ink-s);margin-top:4px">Klikk for å laste opp</div>`}</div><input type="file" id="timg_${subj.id}_${ti}_${tki}" accept="image/*" style="display:none" onchange="uploadTaskImg('${subj.id}',${ti},${tki},this)"></div><div class="fg" style="margin:0"><label class="fl">Riktig svar</label><input class="fi" value="${escH(task.ans||'')}" placeholder="Hva skal elevene svare?" onchange="updateTaskF('${subj.id}',${ti},${tki},'ans',this.value)"></div>`;
+            const showQ=!['fill'].includes(tid);
+            return `<div class="task-ed">
+              <div class="task-ed-hdr">
+                <span style="font-size:.76rem;font-weight:700;color:var(--${subj.color})">Oppgave ${tki+1}</span>
+                <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+                  <select class="fsel" style="width:auto;padding:4px 8px;font-size:.75rem" onchange="changeType('${subj.id}',${ti},${tki},this.value)">${typeOpts}</select>
+                  <select class="fsel" style="width:auto;padding:4px 8px;font-size:.75rem" onchange="updateTaskF('${subj.id}',${ti},${tki},'diff',this.value)">
+                    <option value="easy"${task.diff==='easy'?' selected':''}>Lett</option>
+                    <option value="medium"${task.diff==='medium'?' selected':''}>Middels</option>
+                    <option value="hard"${task.diff==='hard'?' selected':''}>Krevende</option>
+                  </select>
+                  <button class="btn btn-d btn-xs" onclick="deleteTask('${subj.id}',${ti},${tki})">✕</button>
+                </div>
+              </div>
+              ${showQ?`<div class="fg" style="margin-bottom:9px"><label class="fl">Spørsmålstekst</label><textarea class="fta" style="min-height:48px" rows="2" onchange="updateTaskF('${subj.id}',${ti},${tki},'q',this.value)">${escH(task.q||'')}</textarea></div>`:''}
+              ${typeFields}
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="margin-top:13px;padding-top:13px;border-top:1px solid var(--border)">
+          <button class="btn btn-p btn-sm" onclick="saveSubjectsNow()">💾 Lagre endringer</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('tv-content').innerHTML=html;
+}
+window.togTopic=(_,ti2,subjId)=>{};
+window.togTopic=(subjId,ti)=>document.getElementById(`ti_${subjId}_${ti}`)?.classList.toggle('open');
+window.updateTF=(sId,ti,f,v)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti][f]=v;setSubjects(s);}
+window.updateNote=(sId,ti,ni,v)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].notes[ni].text=v;setSubjects(s);}
+window.deleteNote=(sId,ti,ni)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].notes.splice(ni,1);setSubjects(s);renderTContent();}
+window.addNote=(sId,ti)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].notes.push({text:'Nytt notat...'});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.updRule=(sId,ti,ri,v)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.rules)t.rules=[];t.rules[ri].text=v;setSubjects(s);}
+window.addRule=(sId,ti)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.rules)t.rules=[];t.rules.push({text:'Ny regel...'});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.delRule=(sId,ti,ri)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].rules.splice(ri,1);setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.updEx=(sId,ti,exi,f,v)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.examples)t.examples=[];t.examples[exi][f]=v;setSubjects(s);}
+window.addExample=(sId,ti)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.examples)t.examples=[];t.examples.push({title:'Eksempel',text:''});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.delEx=(sId,ti,exi)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].examples.splice(exi,1);setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.uploadForeImg=(sId,ti,inp)=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{updTF(sId,ti,'foreImage',e.target.result);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);};r.readAsDataURL(f);}
+window.updOpt=(sId,ti,tki,oi,v)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti].tasks[tki];if(!t.opts)t.opts=[];t.opts[oi]=v;setSubjects(s);}
+window.updMCM=(sId,ti,tki,oi,checked)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti].tasks[tki];if(!t.correct)t.correct=[];if(checked){if(!t.correct.includes(oi))t.correct.push(oi);}else{t.correct=t.correct.filter(x=>x!==oi);}setSubjects(s);}
+window.setSortTask=(sId,ti,tki,val)=>{const items=val.split('|').map(s=>s.trim());const shuffled=[...items].sort(()=>Math.random()-.5);updateTaskF(sId,ti,tki,'correct',items);updateTaskF(sId,ti,tki,'items',shuffled);}
+window.changeType=(sId,ti,tki,newType)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti].tasks[tki];t.type=newType;if(newType==='mc'&&!t.opts)t.opts=['','','',''];if(newType==='mcmulti'&&!t.opts){t.opts=['','','',''];t.correct=[];}if(newType==='sort'&&!t.correct)t.correct=[];if(newType==='drag'&&!t.zones){t.zones=['Kategori A','Kategori B'];t.items=[];}setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.deleteTask=(sId,ti,tki)=>{if(!confirm('Slett oppgaven?'))return;const s=getSubjects();s.find(x=>x.id===sId).topics[ti].tasks.splice(tki,1);setSubjects(s);renderTContent();}
+window.addTask=(sId,ti)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].tasks.push({type:'num',q:'Nytt spørsmål...',ans:0,diff:'easy',hint:''});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.addTopic=(sId)=>{const s=getSubjects();s.find(x=>x.id===sId).topics.push({id:'t_'+Date.now(),name:'Nytt tema',module:'',videoUrl:'',videoTitle:'',notes:[{text:'Skriv notater her...'}],tasks:[{type:'num',q:'Første oppgave...',ans:0,diff:'easy',hint:''}]});setSubjects(s);renderTContent();}
+window.deleteTopic=(sId,ti)=>{if(!confirm('Slett temaet?'))return;const s=getSubjects();s.find(x=>x.id===sId).topics.splice(ti,1);setSubjects(s);renderTContent();}
+window.saveSubjectsNow=()=>{showSaved();showToast('✅ Innhold lagret!');}
+window.uploadTaskImg=(sId,ti,tki,inp)=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{updateTaskF(sId,ti,tki,'imageData',e.target.result);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);};r.readAsDataURL(f);}
+
+// STUDENTS
+function renderTStudents(){
+  const students=getStudents(),quizzes=getQuizzes();
+  let rows=students.map(s=>{
+    const pct=getStudentPct(s.id);
+    let td=0; const subjects=getSubjects();
+    subjects.forEach((subj,si)=>subj.topics.forEach((_,ti)=>{const p=LS.get(`ll_p_${s.id}_${subj.id}_${ti}`)||[];td+=p.length;}));
+    const qd=quizzes.filter(q=>LS.get(`ll_qr_${s.id}_${q.id}`)).length;
+    return `<tr><td style="font-weight:600">${s.name}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:65px;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--math-l);border-radius:3px"></div></div>${ppill(pct)}</div></td>
+      <td>${td}</td><td>${qd}/${quizzes.length}</td>
+      <td><button class="btn btn-s btn-xs" onclick="openStudentModal('${s.id}')">Detaljer</button></td></tr>`;
+  }).join('');
+  document.getElementById('tv-students').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Elever</div>
+    <div class="pg-title">Alle elever</div>
+    <div class="twrap"><div class="twrap-hdr"><h3>Klasse</h3><button class="btn btn-p btn-sm" onclick="tView('addstudent',null)">+ Legg til elev</button></div>
+    <table><thead><tr><th>Navn</th><th>Fremgang</th><th>Oppgaver</th><th>Prøver</th><th></th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="5" style="text-align:center;color:var(--ink-s);padding:14px">Ingen elever ennå. Legg til elever under «Legg til elev».</td></tr>'}</tbody></table></div>`;
+}
+
+window.openStudentModal=sid=>{
+  const s=getStudents().find(x=>x.id===sid); if(!s) return;
+  const subjects=getSubjects(),quizzes=getQuizzes();
+  const overall=getStudentPct(sid);
+  let html=`<h3 style="font-family:Fraunces,serif;font-weight:700;font-size:1.15rem;margin-bottom:12px">👤 ${s.name}</h3>
+    <div style="margin-bottom:16px">${ppill(overall)} <span style="font-size:.79rem;color:var(--ink-s)">total fremgang</span></div>`;
+  subjects.forEach(subj=>{
+    html+=`<div style="font-weight:600;font-size:.84rem;color:var(--${subj.color});margin:13px 0 7px">${subj.name}</div>`;
+    subj.topics.forEach((t,ti)=>{const p=getTopicPct(sid,subj.id,ti);html+=`<div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border)"><div style="width:150px;font-size:.83rem">${t.name}</div><div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;max-width:110px"><div style="width:${p}%;height:100%;background:var(--${subj.color}-l)"></div></div><div style="font-size:.75rem;font-weight:600;color:var(--${subj.color});width:30px">${p}%</div></div>`;});
+  });
+  if(quizzes.length){
+    html+=`<div style="font-weight:600;font-size:.84rem;color:var(--ink-s);margin:13px 0 7px">📝 Prøver</div>`;
+    quizzes.forEach(q=>{const r=LS.get(`ll_qr_${sid}_${q.id}`);html+=`<div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border)"><div style="width:180px;font-size:.83rem">${q.title}</div>${r?ppill(r.pct)+`<span style="font-size:.74rem;color:var(--ink-s);margin-left:4px">${r.score}/${r.total}</span>`:'<span class="pill p-gr">Ikke tatt</span>'}</div>`;});
+  }
+  document.getElementById('modalContent').innerHTML=html;
+  document.getElementById('mainModal').classList.add('show');
+};
+
+// HEATMAP
+window.setTHmSubj=id=>{tHmSubj=id;renderTHeatmap();};
+function renderTHeatmap(){
+  const subjects=getSubjects(); const subj=subjects.find(s=>s.id===tHmSubj)||subjects[0];
+  if(!subj) return; tHmSubj=subj.id;
+  const students=getStudents();
+  const tabs=subjects.map(s=>`<div class="subj-tab t-${s.color}${s.id===subj.id?' on':''}" onclick="setTHmSubj('${s.id}')"><div class="subj-tab-dot" style="background:var(--${s.color}-l)"></div>${s.name}</div>`).join('');
+  let grid=`<div class="hm-grid" style="grid-template-columns:120px repeat(${subj.topics.length},1fr);gap:3px">
+    <div></div>${subj.topics.map(t=>`<div class="hm-top">${t.name.split(' ')[0]}</div>`).join('')}`;
+  students.forEach(s=>{
+    grid+=`<div class="hm-lbl">${s.name.split(' ')[0]}</div>`;
+    subj.topics.forEach((_,ti)=>{const p=getTopicPct(s.id,subj.id,ti);const lvl=p===0?0:p<40?1:p<80?2:p<100?3:4;grid+=`<div class="hm-cell hm-${lvl}" title="${s.name} · ${subj.topics[ti].name}: ${p}%">${p>0?p+'%':''}</div>`;});
+  });
+  grid+='</div>';
+  document.getElementById('tv-heatmap').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Oversikt</div>
+    <div class="pg-title">Klasseoversikt</div>
+    <div class="subj-tabs">${tabs}</div>
+    <div class="card" style="padding:20px">${grid}
+      <div style="display:flex;gap:11px;margin-top:13px;font-size:.72rem;color:var(--ink-s)">
+        <span>Forklaring:</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:11px;height:11px;background:#eef0f4;border-radius:2px;display:inline-block"></span>Ikke startet</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:11px;height:11px;background:#b2dbd5;border-radius:2px;display:inline-block"></span>Påbegynt</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:11px;height:11px;background:#2ab89f;border-radius:2px;display:inline-block"></span>Fullført</span>
+      </div>
+    </div>`;
+}
+
+// QUIZ BUILDER
+function populateQbSubjects(){
+  const subjects=getSubjects();
+  const qbs=document.getElementById('qbSubject');
+  if(!qbs) return;
+  qbs.innerHTML=subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  updateQbTopics();
+}
+window.updateQbTopics=()=>{
+  const sid=document.getElementById('qbSubject')?.value;
+  const subj=getSubjects().find(s=>s.id===sid);
+  const el=document.getElementById('qbTopic');
+  if(el) el.innerHTML=(subj?.topics||[]).map(t=>`<option>${t.name}</option>`).join('');
+};
+function renderQbForm(){
+  const subjects=getSubjects();
+  document.getElementById('tv-quizbuilder').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Prøver</div>
+    <div class="pg-title">Lag ny prøve</div>
+    <div class="card" style="padding:22px;margin-bottom:16px">
+      <div class="frow" style="margin-bottom:13px">
+        <div class="fg" style="margin:0"><label class="fl">Tittel</label><input class="fi" id="qbTitle" placeholder="F.eks. Kapittelprøve: Prosent"></div>
+        <div class="fg" style="margin:0"><label class="fl">Fag</label><select class="fsel" id="qbSubject" onchange="updateQbTopics()">${subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+      </div>
+      <div class="frow">
+        <div class="fg" style="margin:0"><label class="fl">Tema</label><select class="fsel" id="qbTopic"></select></div>
+        <div class="fg" style="margin:0"><label class="fl">Tidsbegrensning (min)</label><input class="fi" id="qbTime" type="number" value="20" min="5"></div>
+      </div>
+    </div>
+    <div id="qbQList"></div>
+    <button class="add-dashed" onclick="addQbQ()">+ Legg til spørsmål</button>
+    <div style="display:flex;gap:9px;margin-top:14px">
+      <button class="btn btn-p" onclick="saveQuiz()">💾 Lagre og publiser</button>
+      <button class="btn btn-s" onclick="qbQs=[];renderQbQs()">🗑 Tøm</button>
+    </div>`;
+  updateQbTopics(); renderQbQs();
+}
+window.addQbQ=()=>{qbQs.push({type:'mc',text:'',opts:['','','',''],correct:0,exp:''});renderQbQs();};
+function renderQbQs(){
+  const el=document.getElementById('qbQList'); if(!el) return;
+  el.innerHTML=qbQs.map((q,i)=>`<div class="qb-q">
+    <div class="qb-q-hdr"><span style="font-size:.77rem;font-weight:700;color:var(--math)">Spørsmål ${i+1}</span>
+      <div style="display:flex;gap:5px">
+        <div class="type-tabs"><div class="type-tab${q.type==='mc'?' on':''}" onclick="setQT(${i},'mc')">Flervalg</div><div class="type-tab${q.type==='num'?' on':''}" onclick="setQT(${i},'num')">Tallsvar</div></div>
+        <button class="btn btn-d btn-xs" onclick="removeQbQ(${i})">✕</button>
+      </div></div>
+    <div class="fg" style="margin-bottom:9px"><label class="fl">Spørsmålstekst</label>
+      <textarea class="fta" style="min-height:52px" rows="2" onchange="qbQs[${i}].text=this.value">${escH(q.text)}</textarea></div>
+    ${q.type==='mc'?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px">${[0,1,2,3].map(oi=>`<div class="opt-row"><input type="radio" class="opt-radio" name="c${i}" ${q.correct===oi?'checked':''} onchange="qbQs[${i}].correct=${oi}"><input class="opt-inp" placeholder="Alt. ${String.fromCharCode(65+oi)}" value="${escH((q.opts&&q.opts[oi])||'')}" onchange="if(!qbQs[${i}].opts)qbQs[${i}].opts=[];qbQs[${i}].opts[${oi}]=this.value"></div>`).join('')}</div><div style="font-size:.69rem;color:var(--ink-s);margin-bottom:7px">⬆ Velg riktig svar med radio-knappen</div>`
+    :`<div class="fg" style="margin-bottom:8px"><label class="fl">Riktig svar (tall)</label><input class="fi" type="number" value="${q.correct||''}" onchange="qbQs[${i}].correct=parseFloat(this.value)"></div>`}
+    <input class="exp-inp" placeholder="💡 Forklaring som vises etter innlevering..." value="${escH(q.exp||'')}" onchange="qbQs[${i}].exp=this.value">
+  </div>`).join('');
+}
+window.setQT=(i,t)=>{qbQs[i].type=t;renderQbQs();};
+window.removeQbQ=i=>{qbQs.splice(i,1);renderQbQs();};
+window.saveQuiz=()=>{
+  const title=document.getElementById('qbTitle')?.value.trim();
+  if(!title){showToast('❌ Legg til en tittel');return;}
+  if(!qbQs.length){showToast('❌ Legg til minst ett spørsmål');return;}
+  const quizzes=getQuizzes();
+  quizzes.push({id:'q_'+Date.now(),title,subject:document.getElementById('qbSubject').value,
+    topic:document.getElementById('qbTopic').value,timeLimit:parseInt(document.getElementById('qbTime').value)||20,
+    created:new Date().toLocaleDateString('no-NO'),questions:JSON.parse(JSON.stringify(qbQs))});
+  setQuizzes(quizzes); qbQs=[]; renderQbQs();
+  document.getElementById('qbTitle').value='';
+  showToast('✅ Prøven er publisert!'); tView('quizlist',null);
+};
+
+// QUIZ LIST
+function renderTQuizList(){
+  const quizzes=getQuizzes(),students=getStudents(),subjects=getSubjects();
+  const sm={}; subjects.forEach(s=>sm[s.id]=s);
+  let html='';
+  quizzes.forEach(q=>{
+    const done=students.filter(s=>LS.get(`ll_qr_${s.id}_${q.id}`)).length;
+    const subj=sm[q.subject];
+    html+=`<div class="quiz-li"><div class="quiz-li-icon" style="background:var(--${subj?.color||'math'}-pale)">📝</div>
+      <div style="flex:1"><div style="font-weight:600;font-size:.9rem">${q.title}</div>
+      <div style="font-size:.74rem;color:var(--ink-s);margin-top:2px"><span class="pill p-${subj?.color||'math'}" style="margin-right:5px">${subj?.name||''}</span>${q.topic} · ${q.questions.length} spørsmål · ${done}/${students.length} levert</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-p btn-sm" onclick="tView('results',null)">Resultater</button>
+        <button class="btn btn-d btn-sm" onclick="deleteQuiz('${q.id}')">Slett</button>
+      </div></div>`;
+  });
+  document.getElementById('tv-quizlist').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Prøver</div>
+    <div class="pg-title">Mine prøver</div>${html||'<p style="color:var(--ink-s)">Ingen prøver ennå.</p>'}`;
+}
+window.deleteQuiz=id=>{if(!confirm('Slett?'))return;setQuizzes(getQuizzes().filter(q=>q.id!==id));renderTQuizList();showToast('Slettet');};
+
+// RESULTS
+function renderTResults(tab){
+  const quizzes=getQuizzes(),students=getStudents(),subjects=getSubjects();
+  const sm={}; subjects.forEach(s=>sm[s.id]=s);
+  let body='';
+  if(tab==='overview'){
+    quizzes.forEach(q=>{
+      const res=students.map(s=>({s,r:LS.get(`ll_qr_${s.id}_${q.id}`)})).filter(x=>x.r);
+      const avg=res.length?Math.round(res.reduce((a,x)=>a+x.r.pct,0)/res.length):null;
+      const subj=sm[q.subject];
+      body+=`<div class="twrap" style="margin-bottom:16px"><div class="twrap-hdr"><h3>${q.title} <span class="pill p-${subj?.color||'math'}">${subj?.name||''}</span></h3>
+        <span style="font-size:.75rem">${avg!==null?`Snitt: <strong style="color:var(--math)">${avg}%</strong> · Levert: ${res.length}/${students.length}`:'Ingen har levert ennå'}</span></div>
+        <table><thead><tr><th>Elev</th><th>Score</th><th>%</th></tr></thead>
+        <tbody>${students.map(s=>{const r=LS.get(`ll_qr_${s.id}_${q.id}`);
+          if(!r)return`<tr><td style="font-weight:600">${s.name}</td><td colspan="2" style="color:var(--ink-s);font-size:.79rem">Ikke levert</td></tr>`;
+          return`<tr><td style="font-weight:600">${s.name}</td><td>${r.score}/${r.total}</td><td>${ppill(r.pct)}</td></tr>`;}).join('')}
+        </tbody></table></div>`;
+    });
+  } else {
+    body=`<div class="twrap"><div class="twrap-hdr"><h3>Per elev</h3></div>
+      <table><thead><tr><th>Elev</th>${quizzes.map(q=>`<th style="font-size:.68rem">${q.title}</th>`).join('')}<th>Snitt</th></tr></thead>
+      <tbody>${students.map(s=>{const sc=quizzes.map(q=>{const r=LS.get(`ll_qr_${s.id}_${q.id}`);return r?r.pct:null;});const v=sc.filter(x=>x!==null);const avg=v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null;
+        return`<tr><td style="font-weight:600">${s.name}</td>${sc.map(x=>x!==null?`<td>${ppill(x)}</td>`:`<td style="color:var(--ink-s)">—</td>`).join('')}<td>${avg!==null?ppill(avg):'—'}</td></tr>`;}).join('')}
+      </tbody></table></div>`;
+  }
+  document.getElementById('tv-results').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Resultater</div>
+    <div class="pg-title">Prøveresultater</div>
+    <div class="tabs">
+      <div class="tab${tab==='overview'?' active':''}" onclick="renderTResults('overview')">Oversikt</div>
+      <div class="tab${tab==='perstudent'?' active':''}" onclick="renderTResults('perstudent')">Per elev</div>
+    </div>${body||'<p style="color:var(--ink-s)">Ingen prøver ennå.</p>'}`;
+}
+
+// ADD STUDENT
+function renderTAddStudent(){
+  document.getElementById('tv-addstudent').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Admin</div>
+    <div class="pg-title">Legg til elev</div>
+    <div class="card" style="padding:22px;margin-bottom:18px">
+      <div class="frow" style="margin-bottom:13px">
+        <div class="fg" style="margin:0"><label class="fl">Fullt navn</label><input class="fi" id="newName" placeholder="Fornavn Etternavn"></div>
+        <div class="fg" style="margin:0"><label class="fl">Brukernavn</label><input class="fi" id="newUname" placeholder="fornavn.etternavn"></div>
+      </div>
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg" style="margin:0"><label class="fl">Passord</label><input class="fi" id="newPass" value="elev123"></div>
+        <div class="fg" style="margin:0"><label class="fl">Klasse</label><input class="fi" id="newClass" value="9A"></div>
+      </div>
+      <button class="btn btn-p" onclick="addStudent()">+ Opprett elevkonto</button>
+    </div>
+    <div class="twrap"><div class="twrap-hdr"><h3>Elevkontoer</h3></div>
+    <table><thead><tr><th>Navn</th><th>Brukernavn</th><th>Passord</th><th>Klasse</th><th></th></tr></thead>
+    <tbody id="stuAdminBody">${renderStudentRows()}</tbody></table></div>`;
+}
+function renderStudentRows(){
+  const s=getStudents();
+  return s.length?s.map(st=>`<tr><td style="font-weight:600">${st.name}</td><td style="font-family:monospace;font-size:.81rem">${st.username}</td><td style="font-family:monospace;font-size:.81rem">${st.password}</td><td>${st.class||'—'}</td><td><button class="btn btn-d btn-xs" onclick="removeStudent('${st.id}')">Fjern</button></td></tr>`).join('')
+    :'<tr><td colspan="5" style="text-align:center;color:var(--ink-s);padding:14px">Ingen elever ennå</td></tr>';
+}
+window.addStudent=()=>{
+  const name=document.getElementById('newName')?.value.trim();
+  const uname=document.getElementById('newUname')?.value.trim();
+  const pass=document.getElementById('newPass')?.value.trim()||'elev123';
+  const cls=document.getElementById('newClass')?.value.trim()||'9A';
+  if(!name||!uname){showToast('❌ Fyll inn navn og brukernavn');return;}
+  const students=getStudents();
+  if(students.find(s=>s.username.toLowerCase()===uname.toLowerCase())){showToast('❌ Brukernavnet er allerede i bruk');return;}
+  students.push({id:'s_'+Date.now(),name,username:uname,password:pass,class:cls});
+  setStudents(students);
+  const b=document.getElementById('stuAdminBody'); if(b) b.innerHTML=renderStudentRows();
+  showToast('✅ '+name+' er lagt til!');
+  document.getElementById('newName').value=''; document.getElementById('newUname').value='';
+};
+window.removeStudent=id=>{if(!confirm('Fjern?'))return;setStudents(getStudents().filter(s=>s.id!==id));renderTAddStudent();showToast('Fjernet');};
+
+// SETTINGS
+function renderTSettings(){
+  const subjects=getSubjects();
+  document.getElementById('tv-settings').innerHTML=`
+    <div class="pg-eyebrow" style="color:var(--math)">Innstillinger</div>
+    <div class="pg-title">Innstillinger</div>
+    <div class="card" style="padding:22px;margin-bottom:16px">
+      <div style="font-family:Fraunces,serif;font-weight:600;font-size:.97rem;margin-bottom:14px">Legg til nytt fag</div>
+      <div class="frow" style="margin-bottom:13px">
+        <div class="fg" style="margin:0"><label class="fl">Fagnavn</label><input class="fi" id="newSubjName" placeholder="F.eks. Norsk"></div>
+        <div class="fg" style="margin:0"><label class="fl">Farge</label><select class="fsel" id="newSubjColor"><option value="math">Grønn</option><option value="sci">Blå</option><option value="soc">Lilla</option><option value="amber">Oransje</option></select></div>
+      </div>
+      <button class="btn btn-p" onclick="addSubject()">+ Legg til fag</button>
+    </div>
+    <div class="card" style="padding:22px;margin-bottom:16px">
+      <div style="font-family:Fraunces,serif;font-weight:600;font-size:.97rem;margin-bottom:14px">Eksisterende fag</div>
+      ${subjects.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="width:9px;height:9px;border-radius:50%;background:var(--${s.color}-l)"></div>
+        <div style="flex:1;font-weight:500">${s.name}</div>
+        <div style="font-size:.78rem;color:var(--ink-s)">${s.topics.length} temaer</div>
+        <button class="btn btn-d btn-xs" onclick="deleteSubject('${s.id}')">Slett fag</button>
+      </div>`).join('')}
+    </div>
+    <div class="card" style="padding:22px">
+      <div style="font-family:Fraunces,serif;font-weight:600;font-size:.97rem;margin-bottom:14px">Klasse</div>
+      <div class="fg"><label class="fl">Klassenavn</label><input class="fi" id="settClass" value="${getSettings().className||'9A'}"></div>
+      <button class="btn btn-p" onclick="saveSettingsNow()">Lagre</button>
+    </div>`;
+}
+window.addSubject=()=>{
+  const name=document.getElementById('newSubjName')?.value.trim();
+  const color=document.getElementById('newSubjColor')?.value||'math';
+  if(!name){showToast('❌ Skriv inn et fagnavn');return;}
+  const s=getSubjects();
+  s.push({id:'subj_'+Date.now(),name,color,topics:[{id:'t_'+Date.now(),name:'Første tema',videoUrl:'',videoTitle:'',notes:[{text:'Skriv notater her...'}],tasks:[{q:'Første oppgave...',ans:0,diff:'easy',hint:''}]}]});
+  setSubjects(s); renderTSettings(); showToast('✅ "'+name+'" lagt til!');
+};
+window.deleteSubject=id=>{if(!confirm('Slett hele faget og alle temaer?'))return;setSubjects(getSubjects().filter(s=>s.id!==id));renderTSettings();showToast('Faget ble slettet');};
+window.saveSettingsNow=()=>{const s=getSettings();s.className=document.getElementById('settClass')?.value.trim()||'9A';LS.set('ll_settings',s);document.getElementById('classInfo').textContent=s.className;showToast('✅ Lagret!');};
+
+// ══════════════════════════════════════════════
+// STUDENT
+// ══════════════════════════════════════════════
+let sCurrSubjId=null; let sCurrTi=0; let sCompletedTasks=new Set();
+let _activeQuiz=null; let _qAnswers={}; let aiHistory={};
+
+function initStudent(){
+  buildStudentNav();
+  const subjects=getSubjects();
+  if(subjects.length&&subjects[0].topics.length) sLoadTopic(subjects[0].id,0);
+  sUpdateOverall();
+}
+
+function buildStudentNav(){
+  const subjects=getSubjects();
+  let html='';
+  subjects.forEach(subj=>{
+    html+=`<div class="sb-subj-lbl"><div class="sb-subj-dot" style="background:var(--${subj.color}-l)"></div>${subj.name}</div>`;
+    subj.topics.forEach((t,ti)=>{
+      const pct=sGetTopicPct(subj.id,ti);
+      html+=`<div class="sb-topic${pct===100?' done-t':''}" id="snav_${subj.id}_${ti}" onclick="sLoadTopic('${subj.id}',${ti})">${t.name}${t.module?`<span style="font-size:.6rem;background:rgba(212,167,0,.25);color:#d4a700;padding:1px 5px;border-radius:6px;margin-left:5px">${escH(t.module)}</span>`:''}</div>`;
+    });
+  });
+  document.getElementById('studentNav').innerHTML=html;
+}
+
+function sGetTopicPct(subjId,ti){
+  const subj=getSubjects().find(s=>s.id===subjId); if(!subj||!subj.topics[ti]) return 0;
+  const done=LS.get(`ll_p_${currentUser.id}_${subjId}_${ti}`)||[];
+  return subj.topics[ti].tasks.length?Math.round(done.length/subj.topics[ti].tasks.length*100):0;
+}
+
+window.sLoadTopic=(subjId,ti)=>{
+  const subjects=getSubjects(); const subj=subjects.find(s=>s.id===subjId); if(!subj) return;
+  const topic=subj.topics[ti]; if(!topic) return;
+  sCurrSubjId=subjId; sCurrTi=ti;
+  sCompletedTasks=new Set(LS.get(`ll_p_${currentUser.id}_${subjId}_${ti}`)||[]);
+
+  document.getElementById('sTopicView').style.display='block';
+  document.getElementById('sQuizList').style.display='none';
+  document.getElementById('sQuizActive').style.display='none';
+  document.getElementById('sTopicName').textContent=topic.name;
+  document.getElementById('sPgEyebrow').textContent=subj.name;
+  document.getElementById('sPgEyebrow').style.color=`var(--${subj.color})`;
+  document.getElementById('sPgTitle').textContent=topic.name;
+
+  document.querySelectorAll('.sb-topic').forEach(e=>e.classList.remove('active'));
+  document.getElementById(`snav_${subjId}_${ti}`)?.classList.add('active');
+  document.querySelectorAll('#navQuizBtn').forEach(e=>e.classList.remove('active'));
+
+  sRenderFore(subj,topic);
+  sRenderOpp(subj,topic,ti);
+  sRenderEval(subj,topic,ti);
+  sTab('fore');
+  sUpdateBadge(subj,ti);
+  logAct(currentUser.name,'view_topic',{subject:subj.name,topic:topic.name});
+};
+
+window.sTab=t=>{
+  document.querySelectorAll('#sTopicView .tab').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('#sTopicView .panel').forEach(e=>e.classList.remove('active'));
+  const tabs=['fore','opp','eval'];
+  document.querySelectorAll('#sTopicView .tab')[tabs.indexOf(t)]?.classList.add('active');
+  document.getElementById('sp-'+t)?.classList.add('active');
+};
+
+function sRenderFore(subj,topic){
+  const c=subj.color;
+  const langs=[
+    {code:'so',name:'Somali'},
+    {code:'fa',name:'Dari'},
+    {code:'ar',name:'Arabisk'},
+    {code:'fr',name:'Fransk'},
+    {code:'ti',name:'Tigrinja'},
+    {code:'pt',name:'Portugisisk'},
+    {code:'en',name:'Engelsk'},
+  ];
+  const langBar=(blockId)=>`
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;padding:9px 12px;background:var(--mist);border-radius:9px;border:1px solid var(--border);align-items:center">
+      <span style="font-size:.7rem;font-weight:600;color:var(--ink-s);margin-right:3px">🌐 Oversett:</span>
+      ${langs.map(l=>`<button style="padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:white;color:var(--ink-s);font-family:'DM Sans',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--${c})';this.style.color='var(--${c})'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink-s)'" onclick="sTranslate('${blockId}','${l.code}','${l.name}','${c}')">${l.name}</button>`).join('')}
+      <button style="padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--sci);background:var(--sci-pale);color:var(--sci);font-family:'DM Sans',sans-serif" onclick="sSpeak('${blockId}')">🔊 Les opp</button>
+    </div>
+    <div id="tr_${blockId}" style="display:none;background:var(--amber-pale);border:1px solid var(--amber);border-radius:9px;padding:12px 14px;font-size:.87rem;line-height:1.7;margin-bottom:10px"></div>`;
+
+  let html='';
+
+  // Module badge
+  if(topic.module) html+=`<div style="margin-bottom:14px"><span style="font-size:.74rem;font-weight:700;padding:3px 11px;border-radius:10px;background:var(--amber-pale);color:var(--amber);border:1px solid var(--amber)">${escH(topic.module)}</span></div>`;
+
+  // VIDEO
+  html+=`<div style="background:var(--ink);border-radius:14px;overflow:hidden;margin-bottom:18px">
+    <div style="height:195px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:linear-gradient(135deg,#1c2b2a,#2a3a4a);cursor:${topic.videoUrl?'pointer':'default'}"
+      onclick="${topic.videoUrl?`window.open('${escH(topic.videoUrl)}','_blank')`:''}">
+      <div style="width:52px;height:52px;background:var(--${c}-l);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem">▶</div>
+      <div style="color:rgba(255,255,255,.38);font-size:.76rem">${topic.videoUrl?'Klikk for å se video':'Ingen video lagt til ennå'}</div>
+    </div>
+    <div style="padding:12px 17px"><div style="color:white;font-weight:600;font-size:.88rem">${escH(topic.videoTitle||topic.name)}</div>
+    <div style="color:rgba(255,255,255,.35);font-size:.72rem;margin-top:2px">${escH(subj.name)} · ${escH(topic.name)}</div></div>
+  </div>`;
+
+  // REGLER
+  if((topic.rules||[]).length){
+    const rulesId=`rules_${subj.id}_${sCurrTi}`;
+    html+=`<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:18px 20px;margin-bottom:14px">
+      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:1rem;margin-bottom:12px;color:var(--${c})">📏 Regler</div>
+      ${langBar(rulesId)}
+      <div id="${rulesId}">
+        ${topic.rules.map(r=>`<div style="border-left:3px solid var(--${c});background:var(--${c}-pale);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:.88rem;line-height:1.7;white-space:pre-wrap">${escH(r.text)}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // EKSEMPLER
+  if((topic.examples||[]).length){
+    const exId=`examples_${subj.id}_${sCurrTi}`;
+    html+=`<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:18px 20px;margin-bottom:14px">
+      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:1rem;margin-bottom:12px;color:var(--${c})">💡 Eksempler</div>
+      ${langBar(exId)}
+      <div id="${exId}">
+        ${topic.examples.map(ex=>`<div style="background:var(--${c}-pale);border-radius:9px;padding:12px 15px;margin-bottom:9px">
+          <div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--${c});margin-bottom:5px">${escH(ex.title||'Eksempel')}</div>
+          <div style="font-size:.88rem;line-height:1.7;white-space:pre-wrap">${escH(ex.text||'')}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // BILDE
+  if(topic.foreImage){
+    html+=`<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:18px 20px;margin-bottom:14px">
+      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:1rem;margin-bottom:12px;color:var(--${c})">🖼️ Bilde</div>
+      <img src="${topic.foreImage}" style="max-width:100%;border-radius:10px;max-height:360px;object-fit:contain;display:block">
+    </div>`;
+  }
+
+  // Fallback if nothing
+  if(!(topic.rules||[]).length && !(topic.examples||[]).length && !topic.foreImage){
+    html+=`<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:20px;margin-bottom:14px;color:var(--ink-s);font-size:.87rem">
+      Læreren har ikke lagt inn forelesningsinnhold ennå.
+    </div>`;
+  }
+
+  html+=`<div style="margin-top:6px"><button class="btn btn-p" style="background:var(--${c})" onclick="sTab('opp')">Gå til oppgaver →</button></div>`;
+  document.getElementById('sp-fore').innerHTML=html;
+}
+
+// TRANSLATE
+window.sTranslate=async(blockId,langCode,langName,c)=>{
+  const block=document.getElementById(blockId); if(!block)return;
+  const trEl=document.getElementById('tr_'+blockId); if(!trEl)return;
+  const text=block.innerText||block.textContent||'';
+  trEl.innerHTML=`<span style="color:var(--amber)">Oversetter til ${langName}...</span>`;
+  trEl.style.display='block';
+  const key=getAIKey();
+  if(!key){trEl.innerHTML=`<strong>⚠️ API-nøkkel mangler.</strong> Læreren må legge inn API-nøkkel for oversettelse.`;return;}
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:800,
+        messages:[{role:'user',content:`Oversett følgende tekst til ${langName}. Gi KUN den oversatte teksten, ingen forklaring eller ekstra tekst:\n\n${text}`}]})
+    });
+    const data=await res.json();
+    const translated=data.content?.[0]?.text||'Oversettelse feilet.';
+    trEl.innerHTML=`<strong style="font-size:.72rem;color:var(--amber);display:block;margin-bottom:6px">🌐 ${langName}:</strong>${escH(translated)}`;
+  }catch(e){trEl.innerHTML='Oversettelse feilet. Sjekk internettforbindelsen.';}
+};
+
+// TEXT TO SPEECH
+window.sSpeak=(blockId)=>{
+  const block=document.getElementById(blockId); if(!block)return;
+  const text=block.innerText||block.textContent||'';
+  if(!text.trim()){showToast('Ingen tekst å lese opp.');return;}
+  if('speechSynthesis' in window){
+    window.speechSynthesis.cancel();
+    const utt=new SpeechSynthesisUtterance(text);
+    utt.lang='nb-NO'; utt.rate=0.9;
+    window.speechSynthesis.speak(utt);
+    showToast('🔊 Leser opp...');
+  } else {
+    showToast('Nettleseren støtter ikke tale.');
+  }
+};
+}
+
+function sRenderOpp(subj,topic,ti){
+  const c=subj.color; const tot=topic.tasks.length; const n=sCompletedTasks.size;
+  const pct=tot?Math.round(n/tot*100):0;
+  let html=`<div class="task-ph">
+    <div class="ring-w"><svg width="54" height="54" viewBox="0 0 54 54">
+      <circle class="rbg" cx="27" cy="27" r="22"/>
+      <circle class="rfl" id="sRingFill" cx="27" cy="27" r="22" style="stroke:var(--${c}-l);stroke-dashoffset:${141-(141*pct/100)}"/>
+    </svg><div class="rtxt" id="sRingTxt" style="color:var(--${c})">${pct}%</div></div>
+    <div><h3 style="font-weight:600;font-size:.87rem">Oppgaver</h3><p id="sTaskLbl" style="font-size:.75rem;color:var(--ink-s);margin-top:2px">${n} av ${tot} fullført</p></div>
+    <div class="pbar-sm"><div class="pbar-fill" id="sTaskBar" style="width:${pct}%;background:var(--${c}-l)"></div></div>
+  </div>`;
+  const dl={easy:'d-easy',medium:'d-medium',hard:'d-hard'}; const dn={easy:'Lett',medium:'Middels',hard:'Krevende'};
+  const typeLabel={num:'🔢',mc:'🔘',mcmulti:'☑️',tf:'✅',fill:'✍️',sort:'📊',drag:'🔀',open:'📄',image:'🖼️'};
+  topic.tasks.forEach((task,tki)=>{
+    const done=sCompletedTasks.has(tki);
+    const tid=task.type||'num';
+    const qLabel=tid==='fill'?'Fyll inn de manglende ordene':tid==='sort'?'Sorter i riktig rekkefølge':tid==='drag'?'Dra elementer til riktig kategori':tid==='tf'?'Sant eller usant?':tid==='open'?'Åpen oppgave':tid==='image'?'Bilde-oppgave':escH(task.q||'Oppgave');
+    html+=`<div class="tc${done?' done':''}" id="stc${tki}">
+      <div class="tc-hdr" onclick="sTog(${tki})">
+        <div class="tnum" style="${done?`background:var(--${c});color:white`:''}">${done?'✓':(tki+1)}</div>
+        <div class="ttxt">${typeLabel[tid]||'📝'} ${qLabel}</div>
+        <span class="diff ${dl[task.diff]||'d-easy'}">${dn[task.diff]||'Lett'}</span>
+        <span class="tc-tog">▼</span>
+      </div>
+      <div class="tc-body" onclick="event.stopPropagation()">
+        ${sRenderTaskBody(task,tki,c)}
+        <div class="task-fb" id="stfb${tki}" style="margin-top:8px;padding:8px 11px;border-radius:7px;font-size:.82rem;display:none"></div>
+        ${task.hint?`<div class="hint-blk" id="sth${tki}" style="display:none;color:var(--${c});background:var(--${c}-pale);margin-top:7px;padding:8px 11px;border-radius:7px;font-size:.79rem">💡 ${escH(task.hint)}</div>`:''}
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
+          ${task.hint?`<button class="btn btn-s btn-sm" onclick="sTHint(${tki})">💡 Hint</button>`:''}
+          <button class="ai-btn" onclick="sTogAI(${tki})">✨ Spør AI</button>
+        </div>
+        <div class="ai-panel" id="saip${tki}">
+          <div class="ai-phdr">
+            <div class="ai-phdr-l"><span style="font-size:1rem">🤖</span>
+              <div><div class="ai-ptitle">Læringsassistent</div><div class="ai-psub">Gir hint — ikke svar</div></div>
+            </div>
+            <div class="ai-close" onclick="sTogAI(${tki})">✕ Lukk</div>
+          </div>
+          <div class="ai-msgs" id="saimsg${tki}">
+            <div class="ai-msg"><div class="ai-av bot">🤖</div>
+              <div class="ai-bub bot">Hei! Jeg hjelper deg tenke — ikke gir deg svaret. Hva lurer du på?</div></div>
+          </div>
+          <div class="ai-quick-btns">
+            <div class="ai-quick" onclick="sAIQuick(${tki},'Kan du gi meg et hint?')">💡 Hint</div>
+            <div class="ai-quick" onclick="sAIQuick(${tki},'Hva spør oppgaven om?')">🔍 Hva spør den?</div>
+            <div class="ai-quick" onclick="sAIQuick(${tki},'Kan du forklare dette enklere?')">📖 Forklar enklere</div>
+            <div class="ai-quick" onclick="sAIQuick(${tki},'Oversett og forklar oppgaven')">🌐 Oversett</div>
+          </div>
+          <div class="ai-inp-row">
+            <input class="ai-inp" id="saiinp${tki}" placeholder="Skriv spørsmålet ditt..." onkeydown="if(event.key==='Enter')sSendAI(${tki})">
+            <button class="ai-send" id="saisend${tki}" onclick="sSendAI(${tki})">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('sp-opp').innerHTML=html;
+  // init interactive tasks after render
+  topic.tasks.forEach((task,tki)=>{
+    if((task.type||'num')==='sort') initSortTask(tki,task);
+    if((task.type||'num')==='drag') initDragTask(tki,task);
+  });
+}
+
+function sRenderTaskBody(task,tki,c){
+  const tid=task.type||'num';
+  switch(tid){
+    case 'num':
+      return `<div style="margin-top:9px">${escH(task.q||'')}</div>
+        <div style="display:flex;gap:8px;margin-top:9px">
+          <input class="fi" type="number" placeholder="Svar..." id="sta${tki}" style="flex:1" onkeydown="if(event.key==='Enter')sCheckNum(${tki})">
+          <button class="btn btn-p btn-sm" style="background:var(--${c})" onclick="sCheckNum(${tki})">Sjekk</button>
+        </div>`;
+    case 'mc':
+      return `<div style="margin-top:2px;font-size:.9rem;font-weight:500">${escH(task.q||'')}</div>
+        <div class="mc-opts" id="mcopts${tki}">
+          ${(task.opts||[]).map((o,oi)=>`<div class="mc-opt" id="mco_${tki}_${oi}" onclick="sMCSel(${tki},${oi})">
+            <div class="mc-circ">${String.fromCharCode(65+oi)}</div>${escH(o)}</div>`).join('')}
+        </div>
+        <button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:9px" onclick="sMCCheck(${tki},${JSON.stringify(task.correct)},false)">Sjekk svar</button>`;
+    case 'mcmulti':
+      return `<div style="margin-top:2px;font-size:.9rem;font-weight:500">${escH(task.q||'')}</div>
+        <div style="font-size:.76rem;color:var(--ink-s);margin:5px 0">Velg alle riktige svar</div>
+        <div class="mc-opts" id="mcopts${tki}">
+          ${(task.opts||[]).map((o,oi)=>`<div class="mc-opt" id="mco_${tki}_${oi}" onclick="sMCSel(${tki},${oi})">
+            <div class="mc-circ">${String.fromCharCode(65+oi)}</div>${escH(o)}</div>`).join('')}
+        </div>
+        <button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:9px" onclick="sMCCheck(${tki},${JSON.stringify(task.correct||[])},true)">Sjekk svar</button>`;
+    case 'tf':
+      return `<div style="font-size:.95rem;font-weight:500;margin-top:4px;margin-bottom:2px">${escH(task.q||'')}</div>
+        <div class="tf-wrap">
+          <div class="tf-btn tf-true" id="tf_${tki}_true" onclick="sTFSel(${tki},true)">✅ Sant</div>
+          <div class="tf-btn tf-false" id="tf_${tki}_false" onclick="sTFSel(${tki},false)">❌ Usant</div>
+        </div>
+        <button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:9px" onclick="sTFCheck(${tki},${task.correct})">Sjekk svar</button>`;
+    case 'fill':{
+      const parts=(task.q||'').split('___');
+      let blanks='<div class="blank-wrap">';
+      parts.forEach((part,pi)=>{
+        blanks+=escH(part);
+        if(pi<parts.length-1) blanks+=`<input class="blank-inp" id="blank_${tki}_${pi}" placeholder="___">`;
+      });
+      blanks+='</div>';
+      return `${blanks}<button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:10px" onclick="sFillCheck(${tki},${JSON.stringify(task.blanks||[])})">Sjekk svar</button>`;}
+    case 'sort':
+      return `<div style="margin-top:4px;font-size:.9rem;font-weight:500;margin-bottom:2px">${escH(task.q||'Sorter elementene i riktig rekkefølge')}</div>
+        <div class="sort-list" id="sortlist${tki}">
+          ${([...(task.items||task.correct||[])]).sort(()=>Math.random()-.5).map((item,ii)=>`
+          <div class="sort-item" draggable="true" data-val="${escH(item)}" id="si_${tki}_${ii}">
+            <span class="sort-handle">⠿</span>${escH(item)}</div>`).join('')}
+        </div>
+        <button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:9px" onclick="sSortCheck(${tki},${JSON.stringify(task.correct||[])})">Sjekk rekkefølge</button>`;
+    case 'drag':
+      return `<div style="margin-top:4px;font-size:.9rem;font-weight:500;margin-bottom:8px">${escH(task.q||'Dra elementene til riktig kategori')}</div>
+        <div class="drag-bank" id="dragbank${tki}">
+          ${(task.items||[]).map((item,ii)=>`<div class="drag-chip" draggable="true" id="dc_${tki}_${ii}" data-val="${escH(item)}">${escH(item)}</div>`).join('')}
+        </div>
+        ${(task.zones||[]).map((zone,zi)=>`
+          <div style="font-size:.76rem;font-weight:600;color:var(--ink-s);margin-bottom:4px">${escH(zone)}</div>
+          <div class="drop-zone" id="dropzone_${tki}_${zi}" data-zone="${zi}"></div>`).join('')}
+        <button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:9px" onclick="sDragCheck(${tki})">Sjekk</button>`;
+    case 'open':
+      return `<div style="font-size:.9rem;font-weight:500;margin-top:4px">${escH(task.q||'')}</div>
+        ${task.guidance?`<div style="font-size:.78rem;color:var(--ink-s);margin-top:5px;font-style:italic">${escH(task.guidance)}</div>`:''}
+        <textarea class="open-ta" id="openta${tki}" placeholder="Skriv svaret ditt her..."></textarea>
+        <button class="btn btn-p btn-sm" style="background:var(--${c})" onclick="sOpenSubmit(${tki})">Send inn svar</button>
+        <div class="teacher-fb-box" id="tfb${tki}"></div>`;
+    case 'image':
+      return `${task.imageData?`<img src="${task.imageData}" class="task-img">`:''}
+        <div style="font-size:.9rem;font-weight:500;margin-bottom:9px">${escH(task.q||'')}</div>
+        <div style="display:flex;gap:8px">
+          <input class="fi" placeholder="Svar..." id="sta${tki}" style="flex:1" onkeydown="if(event.key==='Enter')sCheckImg(${tki})">
+          <button class="btn btn-p btn-sm" style="background:var(--${c})" onclick="sCheckImg(${tki})">Sjekk</button>
+        </div>`;
+    default:
+      return `<div style="display:flex;gap:8px;margin-top:9px">
+        <input class="fi" type="number" placeholder="Svar..." id="sta${tki}" style="flex:1">
+        <button class="btn btn-p btn-sm" style="background:var(--${c})" onclick="sCheckNum(${tki})">Sjekk</button>
+      </div>`;
+  }
+}
+
+// Shared task completion helper
+function sMarkDone(tki){
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  sCompletedTasks.add(tki);
+  const tc=document.getElementById('stc'+tki);
+  tc?.classList.add('done'); tc?.classList.remove('open');
+  const tn=tc?.querySelector('.tnum');
+  if(tn){tn.textContent='✓';tn.style.background=`var(--${subj?.color||'math'})`;tn.style.color='white';}
+  LS.set(`ll_p_${currentUser.id}_${sCurrSubjId}_${sCurrTi}`,[...sCompletedTasks]);
+  sUpdateTaskProgress(); sUpdateOverall(); buildStudentNav();
+  logAct(currentUser.name,'task_done',{topicIdx:sCurrTi,taskIdx:tki});
+}
+function sFb(tki,ok,msg){
+  const el=document.getElementById('stfb'+tki);
+  if(!el)return;
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  el.style.cssText=ok?`background:var(--${subj?.color||'math'}-pale);color:var(--${subj?.color||'math'});display:block;padding:8px 11px;border-radius:7px;font-size:.82rem`:'background:var(--coral-pale);color:var(--coral);display:block;padding:8px 11px;border-radius:7px;font-size:.82rem';
+  el.textContent=msg;
+}
+
+window.sTog=i=>document.getElementById('stc'+i)?.classList.toggle('open');
+window.sTHint=i=>{const h=document.getElementById('sth'+i);if(h)h.style.display=h.style.display==='none'?'block':'none';};
+
+// NUM
+window.sCheckNum=tki=>{
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  const topic=subj?.topics[sCurrTi]; const task=topic?.tasks[tki];
+  const v=parseFloat(document.getElementById('sta'+tki)?.value);
+  if(isNaN(v)){sFb(tki,false,'⚠️ Skriv inn et tall.');return;}
+  if(Math.abs(v-(task?.ans||0))<0.01){sFb(tki,true,'✅ Riktig! Bra jobbet!');sMarkDone(tki);}
+  else sFb(tki,false,'❌ Ikke riktig. Prøv igjen!');
+};
+
+// IMAGE (text answer)
+window.sCheckImg=tki=>{
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  const task=subj?.topics[sCurrTi]?.tasks[tki];
+  const v=(document.getElementById('sta'+tki)?.value||'').trim().toLowerCase();
+  const ans=(task?.ans||'').trim().toLowerCase();
+  if(!v){sFb(tki,false,'⚠️ Skriv inn et svar.');return;}
+  if(v===ans||ans.split(',').map(s=>s.trim()).includes(v)){sFb(tki,true,'✅ Riktig!');sMarkDone(tki);}
+  else sFb(tki,false,'❌ Ikke riktig. Prøv igjen!');
+};
+
+// MC (single and multi)
+let _mcSels={};
+window.sMCSel=(tki,oi)=>{
+  if(!_mcSels[tki])_mcSels[tki]=new Set();
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  const task=subj?.topics[sCurrTi]?.tasks[tki];
+  if(task?.type==='mcmulti'){
+    if(_mcSels[tki].has(oi))_mcSels[tki].delete(oi); else _mcSels[tki].add(oi);
+    document.getElementById(`mco_${tki}_${oi}`)?.classList.toggle('sel');
+  } else {
+    _mcSels[tki]=new Set([oi]);
+    document.querySelectorAll(`[id^="mco_${tki}_"]`).forEach(e=>e.classList.remove('sel'));
+    document.getElementById(`mco_${tki}_${oi}`)?.classList.add('sel');
+  }
+};
+window.sMCCheck=(tki,correct,isMulti)=>{
+  const sel=_mcSels[tki]||new Set();
+  if(!sel.size){sFb(tki,false,'⚠️ Velg et svar først.');return;}
+  document.querySelectorAll(`[id^="mco_${tki}_"]`).forEach(e=>{e.style.pointerEvents='none';});
+  let ok=false;
+  if(isMulti){
+    const correctSet=new Set(Array.isArray(correct)?correct:[]);
+    ok=sel.size===correctSet.size&&[...sel].every(v=>correctSet.has(v));
+    document.querySelectorAll(`[id^="mco_${tki}_"]`).forEach((e,oi)=>{
+      if(correctSet.has(oi)) e.classList.add('correct-o');
+      else if(sel.has(oi)) e.classList.add('wrong-o');
+    });
+  } else {
+    ok=sel.has(typeof correct==='number'?correct:parseInt(correct));
+    document.querySelectorAll(`[id^="mco_${tki}_"]`).forEach((e,oi)=>{
+      if(oi===(typeof correct==='number'?correct:parseInt(correct))) e.classList.add('correct-o');
+      else if(sel.has(oi)) e.classList.add('wrong-o');
+    });
+  }
+  sFb(tki,ok,ok?'✅ Riktig!':'❌ Ikke riktig. Se hvilke svar som er riktige.');
+  if(ok) sMarkDone(tki);
+};
+
+// TRUE/FALSE
+let _tfSels={};
+window.sTFSel=(tki,val)=>{
+  _tfSels[tki]=val;
+  document.getElementById(`tf_${tki}_true`)?.classList.toggle('sel',val===true);
+  document.getElementById(`tf_${tki}_false`)?.classList.toggle('sel',val===false);
+};
+window.sTFCheck=(tki,correct)=>{
+  if(_tfSels[tki]===undefined){sFb(tki,false,'⚠️ Velg Sant eller Usant.');return;}
+  const ok=_tfSels[tki]===(correct===true||correct==='true');
+  ['true','false'].forEach(v=>{
+    const el=document.getElementById(`tf_${tki}_${v}`);
+    el?.style.setProperty('pointer-events','none');
+    const isCorrectBtn=(v==='true')===(correct===true||correct==='true');
+    if(isCorrectBtn) el?.classList.add('revealed-c');
+    else if(_tfSels[tki]===(v==='true')&&!ok) el?.classList.add('revealed-w');
+  });
+  sFb(tki,ok,ok?'✅ Riktig!':'❌ Feil. Se riktig svar markert ovenfor.');
+  if(ok) sMarkDone(tki);
+};
+
+// FILL IN BLANK
+window.sFillCheck=(tki,blanks)=>{
+  const inputs=document.querySelectorAll(`[id^="blank_${tki}_"]`);
+  let allOk=true;
+  inputs.forEach((inp,i)=>{
+    const v=inp.value.trim().toLowerCase();
+    const ans=(blanks[i]||'').trim().toLowerCase();
+    const ok=v===ans;
+    inp.classList.toggle('ok',ok);
+    inp.classList.toggle('no',!ok);
+    if(!ok) allOk=false;
+  });
+  sFb(tki,allOk,allOk?'✅ Alle svar er riktige!':'❌ Noen svar er feil. Prøv igjen!');
+  if(allOk) sMarkDone(tki);
+};
+
+// SORT
+function initSortTask(tki,task){
+  const list=document.getElementById('sortlist'+tki); if(!list)return;
+  let dragged=null;
+  list.querySelectorAll('.sort-item').forEach(item=>{
+    item.addEventListener('dragstart',e=>{dragged=item;item.classList.add('dragging-s');e.dataTransfer.effectAllowed='move';});
+    item.addEventListener('dragend',()=>{dragged?.classList.remove('dragging-s');dragged=null;});
+    item.addEventListener('dragover',e=>{e.preventDefault();if(dragged&&dragged!==item){const r=item.getBoundingClientRect();const mid=r.top+r.height/2;list.insertBefore(dragged,e.clientY<mid?item:item.nextSibling);}});
+  });
+}
+window.sSortCheck=(tki,correct)=>{
+  const list=document.getElementById('sortlist'+tki); if(!list)return;
+  const order=[...list.querySelectorAll('.sort-item')].map(el=>el.dataset.val);
+  const ok=JSON.stringify(order)===JSON.stringify(correct);
+  list.querySelectorAll('.sort-item').forEach((el,i)=>{
+    el.style.pointerEvents='none';
+    el.classList.toggle('correct-s',el.dataset.val===correct[i]);
+    el.classList.toggle('wrong-s',el.dataset.val!==correct[i]);
+  });
+  sFb(tki,ok,ok?'✅ Riktig rekkefølge!':'❌ Ikke helt riktig. Grønt = riktig plass, rødt = feil plass.');
+  if(ok) sMarkDone(tki);
+};
+
+// DRAG AND DROP
+function initDragTask(tki,task){
+  const bank=document.getElementById('dragbank'+tki); if(!bank)return;
+  let dragged=null;
+  const setupChip=chip=>{
+    chip.addEventListener('dragstart',e=>{dragged=chip;chip.classList.add('dragging-c');e.dataTransfer.effectAllowed='move';});
+    chip.addEventListener('dragend',()=>{dragged?.classList.remove('dragging-c');dragged=null;});
+  };
+  bank.querySelectorAll('.drag-chip').forEach(setupChip);
+  document.querySelectorAll(`[id^="dropzone_${tki}_"]`).forEach(zone=>{
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('over-zone');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('over-zone'));
+    zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('over-zone');if(dragged){zone.appendChild(dragged);}});
+  });
+  bank.addEventListener('dragover',e=>{e.preventDefault();bank.classList.add('over-zone');});
+  bank.addEventListener('dragleave',()=>bank.classList.remove('over-zone'));
+  bank.addEventListener('drop',e=>{e.preventDefault();bank.classList.remove('over-zone');if(dragged)bank.appendChild(dragged);});
+}
+window.sDragCheck=tki=>{
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  const task=subj?.topics[sCurrTi]?.tasks[tki]; if(!task)return;
+  let allOk=true;
+  document.querySelectorAll(`[id^="dropzone_${tki}_"]`).forEach((zone,zi)=>{
+    zone.querySelectorAll('.drag-chip').forEach(chip=>{
+      chip.style.cursor='default';
+      chip.draggable=false;
+      chip.classList.add('correct-c');
+    });
+  });
+  sFb(tki,true,'✅ Svar registrert! Læreren ser svaret ditt.');
+  sMarkDone(tki);
+};
+
+// OPEN
+window.sOpenSubmit=tki=>{
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  const task=subj?.topics[sCurrTi]?.tasks[tki];
+  const ans=document.getElementById('openta'+tki)?.value.trim();
+  if(!ans){sFb(tki,false,'⚠️ Skriv inn et svar.');return;}
+  const resps=LS.get(`ll_open_${currentUser.id}`)||[];
+  const existing=resps.find(r=>r.tki===tki&&r.subjId===sCurrSubjId&&r.topicIdx===sCurrTi);
+  const entry={id:'or_'+Date.now(),tki,subjId:sCurrSubjId,topicIdx:sCurrTi,q:task?.q||'',ans,ts:Date.now()};
+  if(existing) Object.assign(existing,entry); else resps.push(entry);
+  LS.set(`ll_open_${currentUser.id}`,resps);
+  sFb(tki,true,'✅ Svar sendt! Læreren vil gi tilbakemelding.');
+  const fbBox=document.getElementById('tfb'+tki);
+  const savedFb=existing?.feedback;
+  if(fbBox&&savedFb){fbBox.className='teacher-fb-box show';fbBox.innerHTML=`<strong>📝 Tilbakemelding:</strong> ${escH(savedFb)}`;}
+  sMarkDone(tki);
+};
+
+// legacy sCheck alias
+window.sCheck=(i,correct)=>sCheckNum(i);
+
+function sUpdateTaskProgress(){
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId); if(!subj) return;
+  const topic=subj.topics[sCurrTi]; if(!topic) return;
+  const tot=topic.tasks.length,n=sCompletedTasks.size,pct=tot?Math.round(n/tot*100):0;
+  document.getElementById('sTaskLbl').textContent=n+' av '+tot+' fullført';
+  document.getElementById('sRingTxt').textContent=pct+'%';
+  document.getElementById('sTaskBar').style.width=pct+'%';
+  document.getElementById('sRingFill').style.strokeDashoffset=141-(141*pct/100);
+  sUpdateBadge(subj,sCurrTi);
+}
+function sUpdateBadge(subj,ti){
+  const pct=sGetTopicPct(subj.id,ti);
+  const b=document.getElementById('sTopicBadge');
+  b.textContent=pct+'% fullført';b.style.background=`var(--${subj.color}-pale)`;b.style.color=`var(--${subj.color})`;
+}
+function sUpdateOverall(){
+  const subjects=getSubjects(); let tot=0,done=0;
+  subjects.forEach(subj=>subj.topics.forEach((_,ti)=>{const p=LS.get(`ll_p_${currentUser.id}_${subj.id}_${ti}`)||[];tot+=subj.topics[ti].tasks.length;done+=p.length;}));
+  const pct=tot?Math.round(done/tot*100):0;
+  document.getElementById('sbFill').style.width=pct+'%';
+  document.getElementById('sbPct').textContent=pct+'% fullført';
+}
+
+function sRenderEval(subj,topic,ti){
+  const c=subj.color; const saved=LS.get(`ll_ev_${currentUser.id}_${subj.id}_${ti}`)||{};
+  const goals=['Jeg forstår hva dette temaet handler om.','Jeg kan løse enkle oppgaver.','Jeg kan løse krevende oppgaver.','Jeg kan forklare dette til andre.','Samlet vurdering'];
+  let html=`<div style="background:white;border-radius:11px;border:1px solid var(--border);padding:14px 18px;margin-bottom:14px;font-size:.86rem;color:var(--ink-s);line-height:1.6">
+    Vurder deg selv ærlig. 🟢 Kan dette &nbsp;|&nbsp; 🟡 Usikker &nbsp;|&nbsp; 🔴 Trenger øvelse</div>
+  <div class="eval-tbl">
+    <div class="eval-row hdr"><div>Kompetansemål</div><div style="display:flex;gap:6px;font-size:.68rem"><span style="width:20px;text-align:center">✔</span><span style="width:20px;text-align:center">?</span><span style="width:20px;text-align:center">✗</span></div></div>
+    ${goals.map((g,i)=>`<div class="eval-row"><div class="eval-txt${i===goals.length-1?'" style="font-weight:600':''}">${g}</div>
+      <div class="eval-dots">
+        <div class="eval-dot green${saved['g'+i]==='green'?' sel':''}" onclick="selDot(this,'eg${i}')"></div>
+        <div class="eval-dot yellow${saved['g'+i]==='yellow'?' sel':''}" onclick="selDot(this,'eg${i}')"></div>
+        <div class="eval-dot red${saved['g'+i]==='red'?' sel':''}" onclick="selDot(this,'eg${i}')"></div>
+      </div></div>`).join('')}
+  </div>
+  <button style="margin-top:14px;width:100%;padding:12px;background:var(--${c});color:white;border:none;border-radius:9px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="sSaveEval('${subj.id}',${ti})">Lagre egenvurdering</button>
+  <div id="sEvalRes" style="display:none;background:var(--${c}-pale);border-radius:11px;padding:14px 18px;margin-top:12px;border:1px solid var(--${c})">
+    <div style="font-family:Fraunces,serif;font-weight:600;color:var(--${c});margin-bottom:5px">Lagret ✓</div>
+    <p id="sEvalMsg" style="font-size:.83rem;color:var(--ink-s);line-height:1.6"></p>
+  </div>`;
+  document.getElementById('sp-eval').innerHTML=html;
+}
+window.selDot=(dot)=>{dot.closest('.eval-row').querySelectorAll('.eval-dot').forEach(d=>d.classList.remove('sel'));dot.classList.add('sel');};
+window.sSaveEval=(subjId,ti)=>{
+  const scores={};
+  document.querySelectorAll('#sp-eval .eval-row:not(.hdr)').forEach((row,i)=>{
+    const sel=row.querySelector('.eval-dot.sel');
+    scores['g'+i]=sel?sel.classList.contains('green')?'green':sel.classList.contains('yellow')?'yellow':'red':'';
+  });
+  LS.set(`ll_ev_${currentUser.id}_${subjId}_${ti}`,scores);
+  const subj=getSubjects().find(s=>s.id===subjId);
+  logAct(currentUser.name,'eval_saved',{subject:subj?.name,topicIdx:ti});
+  const reds=Object.values(scores).filter(v=>v==='red').length;
+  const yellows=Object.values(scores).filter(v=>v==='yellow').length;
+  const msg=reds>=2?'Du trenger mer øvelse. Gå gjennom forelesningen og oppgavene igjen.':yellows>=2?'Du er på god vei! Øv mer på de usikre målene.':'Flott! Du mestrer dette temaet godt. Klar for neste?';
+  document.getElementById('sEvalMsg').textContent=msg;
+  document.getElementById('sEvalRes').style.display='block';
+};
+
+// QUIZ
+window.sShowQuizList=()=>{
+  document.getElementById('sTopicView').style.display='none';
+  document.getElementById('sQuizList').style.display='block';
+  document.getElementById('sQuizActive').style.display='none';
+  document.getElementById('sTopicName').textContent='Mine prøver';
+  document.getElementById('sTopicBadge').textContent='';
+  document.querySelectorAll('.sb-topic').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('#navQuizBtn').forEach(e=>e.classList.add('active'));
+  const quizzes=getQuizzes(); const subjects=getSubjects(); const sm={}; subjects.forEach(s=>sm[s.id]=s);
+  let html='';
+  quizzes.forEach(q=>{
+    const subj=sm[q.subject]; const result=LS.get(`ll_qr_${currentUser.id}_${q.id}`);
+    html+=`<div class="qlc" onclick="sStartQuiz('${q.id}')">
+      <div style="width:38px;height:38px;border-radius:9px;background:var(--${subj?.color||'math'}-pale);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">📝</div>
+      <div style="flex:1"><div style="font-weight:600;font-size:.9rem">${escH(q.title)}</div>
+        <div style="font-size:.74rem;color:var(--ink-s);margin-top:2px">${escH(q.topic)} · ${q.questions.length} spørsmål · ${q.timeLimit} min</div></div>
+      ${result?`<div style="text-align:right"><div style="font-family:Fraunces,serif;font-weight:700;font-size:1.1rem;color:var(--${subj?.color||'math'})">${result.score}/${result.total}</div><div style="font-size:.72rem;color:var(--ink-s)">Fullført</div></div>`
+      :`<span style="background:var(--amber-pale);color:var(--amber);font-size:.7rem;font-weight:600;padding:3px 9px;border-radius:10px">Ny</span>`}
+    </div>`;
+  });
+  document.getElementById('sQuizListContent').innerHTML=html||'<p style="color:var(--ink-s)">Ingen prøver tilgjengelig ennå.</p>';
+};
+window.sStartQuiz=qid=>{
+  const quiz=getQuizzes().find(q=>q.id===qid); if(!quiz) return;
+  const subjects=getSubjects(); const subj=subjects.find(s=>s.id===quiz.subject);
+  _activeQuiz=quiz; _qAnswers={};
+  document.getElementById('sQuizList').style.display='none';
+  document.getElementById('sQuizActive').style.display='block';
+  document.getElementById('sTopicName').textContent=quiz.title;
+  sRenderQuiz(quiz,subj);
+};
+function sRenderQuiz(quiz,subj){
+  const c=subj?.color||'math';
+  let html=`<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:17px 21px;margin-bottom:14px">
+    <h2 style="font-family:Fraunces,serif;font-weight:600;font-size:1.15rem;margin-bottom:5px">${escH(quiz.title)}</h2>
+    <div style="font-size:.77rem;color:var(--ink-s);display:flex;gap:13px;margin-top:6px">
+      <span>📚 ${escH(subj?.name||quiz.subject)}</span><span>❓ ${quiz.questions.length} spørsmål</span><span>⏱ ${quiz.timeLimit} min</span></div></div>`;
+  quiz.questions.forEach((q,i)=>{
+    html+=`<div class="qcard" id="sqcard${i}">
+      <div class="qnum" style="color:var(--${c})">Spørsmål ${i+1} av ${quiz.questions.length}</div>
+      <div class="qtext">${escH(q.text)}</div>`;
+    if(q.type==='mc'){
+      html+=`<div class="qopts">${q.opts.map((opt,oi)=>`<div class="qopt" id="sqo_${i}_${oi}" onclick="sSelOpt(${i},${oi})"><div class="qcirc">${String.fromCharCode(65+oi)}</div>${escH(opt)}</div>`).join('')}</div>`;
+    } else {
+      html+=`<input class="qinp" type="number" id="sqinp${i}" placeholder="Svar her...">
+        <button class="btn btn-p" style="background:var(--${c})" onclick="sCheckNum(${i},${q.correct},'${escH(q.exp||'')}')">Sjekk svar</button>`;
+    }
+    html+=`<div class="qexp" id="sqexp${i}"></div></div>`;
+  });
+  html+=`<button class="quiz-sub-btn" style="background:var(--${c})" onclick="sSubmitQuiz()">Lever prøven</button>
+    <div class="qres" id="sqres"></div>`;
+  document.getElementById('sQuizContent').innerHTML=html;
+}
+window.sSelOpt=(qi,oi)=>{_qAnswers[qi]=oi;document.querySelectorAll(`[id^="sqo_${qi}_"]`).forEach(o=>o.classList.remove('selected'));document.getElementById(`sqo_${qi}_${oi}`).classList.add('selected');};
+window.sCheckNum=(qi,correct,exp)=>{const v=parseFloat(document.getElementById('sqinp'+qi)?.value);_qAnswers[qi]=v;const inp=document.getElementById('sqinp'+qi);const el=document.getElementById('sqexp'+qi);if(Math.abs(v-correct)<0.01){inp.classList.add('ok-i');el.className='qexp ok-e show';el.textContent='✅ Riktig! '+exp;}else{inp.classList.add('no-i');el.className='qexp no-e show';el.textContent='❌ Feil. '+exp;}};
+window.sSubmitQuiz=()=>{
+  const quiz=_activeQuiz; let score=0;
+  const subj=getSubjects().find(s=>s.id===quiz.subject); const c=subj?.color||'math';
+  quiz.questions.forEach((q,i)=>{
+    const ans=_qAnswers[i]; const exp=document.getElementById('sqexp'+i);
+    if(q.type==='mc'){const ok=ans===q.correct;if(ok)score++;
+      document.querySelectorAll(`[id^="sqo_${i}_"]`).forEach((o,oi)=>{o.style.pointerEvents='none';if(oi===q.correct)o.classList.add('correct');else if(oi===ans&&!ok)o.classList.add('wrong');});
+      exp.className='qexp '+(ok?'ok-e':'no-e')+' show';exp.textContent=(ok?'✅ ':('❌ Riktig: '+q.opts[q.correct]+'. '))+q.exp;
+    } else {if(typeof ans==='number'&&Math.abs(ans-q.correct)<0.01)score++;}
+  });
+  const pct=Math.round(score/quiz.questions.length*100);
+  LS.set(`ll_qr_${currentUser.id}_${quiz.id}`,{score,total:quiz.questions.length,pct,ts:Date.now()});
+  logAct(currentUser.name,'quiz_done',{quizTitle:quiz.title,score,total:quiz.questions.length,pct});
+  const msg=pct>=80?'Utmerket! Du mestrer dette temaet svært godt!':pct>=60?'Bra! Gå gjennom svarene du fikk feil.':'Øv mer på dette temaet.';
+  const res=document.getElementById('sqres'); res.style.display='block';
+  res.innerHTML=`<div class="qrs">${score}/${quiz.questions.length}</div>
+    <div style="font-size:.83rem;color:rgba(255,255,255,.45);margin-top:3px">${pct}% riktige</div>
+    <div style="font-size:.87rem;color:rgba(255,255,255,.6);margin-top:9px;line-height:1.6">${msg}</div>
+    <button class="qrb" onclick="sShowQuizList()">← Tilbake til prøver</button>`;
+  res.scrollIntoView({behavior:'smooth'});
+};
+
+// ── AI ASSISTANT ──
+function getAIKey(){return AI_KEY!=='din-api-nøkkel-her'?AI_KEY:localStorage.getItem('ll_ai_key')||'';}
+window.sTogAI=tki=>{
+  const p=document.getElementById('saip'+tki); p.classList.toggle('open');
+  if(p.classList.contains('open')){if(!getAIKey())sShowApiSetup(tki);else document.getElementById('saiinp'+tki)?.focus();}
+};
+function sShowApiSetup(tki){
+  const msgs=document.getElementById('saimsg'+tki); if(msgs.querySelector('.api-setup')) return;
+  const d=document.createElement('div'); d.className='api-setup';
+  d.innerHTML=`<strong>🔑 API-nøkkel mangler</strong>Lim inn din Anthropic API-nøkkel for å aktivere assistenten.
+    <input class="api-key-inp" id="llakeyinp${tki}" placeholder="sk-ant-..." type="password">
+    <button class="api-save-btn" onclick="sSaveKey(${tki})">Aktiver</button>`;
+  msgs.appendChild(d);
+}
+window.sSaveKey=tki=>{
+  const v=document.getElementById('llakeyinp'+tki)?.value.trim();
+  if(!v?.startsWith('sk-ant')){alert('Nøkkelen skal starte med sk-ant-...');return;}
+  localStorage.setItem('ll_ai_key',v);
+  document.querySelector('#saimsg'+tki+' .api-setup')?.remove();
+  sAddBotMsg(tki,'✅ Aktivert! Hva lurer du på?');
+};
+window.sAIQuick=(tki,txt)=>{document.getElementById('saiinp'+tki).value=txt;sSendAI(tki);};
+window.sSendAI=async tki=>{
+  const inp=document.getElementById('saiinp'+tki); const msg=inp?.value.trim(); if(!msg) return;
+  const key=getAIKey(); if(!key){sShowApiSetup(tki);return;}
+  inp.value=''; sAddUserMsg(tki,msg); const tid=sAddTyping(tki);
+  const send=document.getElementById('saisend'+tki); if(send) send.disabled=true;
+  if(!aiHistory[tki]) aiHistory[tki]=[];
+  aiHistory[tki].push({role:'user',content:msg});
+  const subj=getSubjects().find(s=>s.id===sCurrSubjId);
+  const topic=subj?.topics[sCurrTi]; const task=topic?.tasks[tki];
+  const sys=`Du er en hjelpsom læringsassistent for norske elever (8-10. trinn).
+OPPGAVEN: Fag: ${subj?.name||'ukjent'} · Tema: ${topic?.name||'ukjent'} · Oppgave: ${task?.q||'ukjent'} · Svar: ${task?.ans} (ALDRI OPPGI DETTE DIREKTE)
+REGLER: 1) Gi ALDRI det direkte svaret (${task?.ans}). 2) Gi hint som hjelper eleven tenke selv. 3) Forklar begreper og metoder. 4) Svar på norsk (bokmål). 5) Vær kort og oppmuntrende (maks 3-4 setninger).`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:350,system:sys,messages:aiHistory[tki]})});
+    document.getElementById(tid)?.remove(); if(send) send.disabled=false;
+    if(!res.ok){const e=await res.json();if(e.error?.type==='authentication_error'){localStorage.removeItem('ll_ai_key');sAddBotMsg(tki,'❌ Ugyldig nøkkel. Prøv igjen.');sShowApiSetup(tki);}else sAddBotMsg(tki,'⚠️ Noe gikk galt, prøv igjen.');aiHistory[tki].pop();return;}
+    const data=await res.json(); const reply=data.content[0].text;
+    aiHistory[tki].push({role:'assistant',content:reply});
+    if(aiHistory[tki].length>10) aiHistory[tki]=aiHistory[tki].slice(-10);
+    sAddBotMsg(tki,reply);
+  }catch(e){document.getElementById(tid)?.remove();if(send)send.disabled=false;sAddBotMsg(tki,'⚠️ Kan ikke koble til. Sjekk internett.');aiHistory[tki].pop();}
+};
+function sAddUserMsg(tki,t){const m=document.getElementById('saimsg'+tki);m.innerHTML+=`<div class="ai-msg u"><div class="ai-av user">👤</div><div class="ai-bub user">${escH(t)}</div></div>`;m.scrollTop=m.scrollHeight;}
+function sAddBotMsg(tki,t){const m=document.getElementById('saimsg'+tki);m.innerHTML+=`<div class="ai-msg"><div class="ai-av bot">🤖</div><div class="ai-bub bot">${escH(t)}</div></div>`;m.scrollTop=m.scrollHeight;}
+function sAddTyping(tki){const m=document.getElementById('saimsg'+tki);const id='st_'+tki+'_'+Date.now();m.innerHTML+=`<div class="ai-msg" id="${id}"><div class="ai-av bot">🤖</div><div class="ai-bub bot typing"><span>●</span><span>●</span><span>●</span></div></div>`;m.scrollTop=m.scrollHeight;return id;}
+
+// UTIL
+function escH(t){if(t===null||t===undefined)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
