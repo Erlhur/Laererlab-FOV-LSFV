@@ -246,6 +246,28 @@ tr:hover td{background:#fafcfc}
 .add-dashed:hover{border-color:var(--math);color:var(--math);background:var(--math-pale)}
 
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* CROSSWORD */
+.cw-grid{display:inline-grid;gap:2px;margin:10px 0}
+.cw-cell{width:34px;height:34px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;background:white;position:relative}
+.cw-cell.black{background:#1a1f2e;border-color:#1a1f2e}
+.cw-cell input{width:100%;height:100%;border:none;outline:none;text-align:center;font-size:.85rem;font-weight:700;background:transparent;text-transform:uppercase}
+.cw-cell .cw-num{position:absolute;top:1px;left:2px;font-size:.42rem;color:var(--ink-s);font-weight:700;line-height:1}
+.cw-cell.correct{background:#dcfce7 !important}
+.cw-cell.wrong{background:#fee2e2 !important}
+.cw-clues{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.cw-clue{font-size:.8rem;padding:4px 0;border-bottom:1px solid var(--border)}
+.cw-clue span{font-weight:700;color:var(--math);margin-right:5px}
+/* WORD SEARCH */
+.ws-grid{display:inline-grid;gap:3px;margin:10px 0;user-select:none}
+.ws-cell{width:30px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;background:var(--mist);border:1px solid var(--border);cursor:pointer;transition:all .1s}
+.ws-cell.selecting{background:var(--math-pale);border-color:var(--math)}
+.ws-cell.found{background:var(--math);color:white;border-color:var(--math)}
+.ws-words{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
+.ws-word{font-size:.8rem;padding:3px 10px;border-radius:20px;background:var(--mist);border:1px solid var(--border);font-weight:600}
+.ws-word.found{background:var(--math-pale);color:var(--math);text-decoration:line-through}
+/* LISTEN WRITE */
+.lw-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:var(--math);color:white;border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:12px}
+.lw-btn:hover{opacity:.88}
 .disc-q-card{background:white;border-radius:13px;border:1px solid var(--border);padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow)}
 .disc-q-card.active-q{border-color:var(--math);box-shadow:0 0 0 2px rgba(42,184,159,.18)}
 .sym-btn{padding:5px 10px;background:white;border:1.5px solid var(--border);border-radius:7px;font-size:.85rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s}
@@ -472,7 +494,7 @@ tr:hover td{background:#fafcfc}
     <div class="sb-section">Prøver</div>
     <div class="sb-item" id="navQuizBtn" onclick="sShowQuizList()"><span>📝</span> Mine prøver</div>
     <div class="sb-section">Klasse</div>
-    <div class="sb-item" id="navDiscBtn" onclick="sShowDiscussion()"><span>💬</span> Diskusjon <span id="discPulse" style="display:none;width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;animation:pulse 1s infinite"></span></div>
+    <div class="sb-item" id="navDiscBtn" onclick="sShowDiscussion()"><span>💬</span> Diskusjon <span id="discPulse" style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:none;animation:pulse 1s infinite;vertical-align:middle;margin-left:3px"></span></div>
     <div class="sb-bot">
       <div style="font-size:.7rem;color:rgba(255,255,255,.24);margin-bottom:4px">Total fremgang</div>
       <div class="sb-prog-bar"><div class="sb-prog-fill" id="sbFill" style="width:0%"></div></div>
@@ -682,282 +704,298 @@ function renderTContent(){
   const subjects=getSubjects(); const subj=subjects.find(s=>s.id===tContentSubj)||subjects[0];
   if(!subj){document.getElementById('tv-content').innerHTML='<p>Ingen fag ennå. Legg til fag under Innstillinger.</p>';return;}
   tContentSubj=subj.id;
-  let html=`<div class="pg-eyebrow" style="color:var(--${subj.color})">Innhold</div>
-  <div class="pg-title">Rediger innhold</div>
-  <div class="subj-tabs">${subjects.map(s=>`<div class="subj-tab t-${s.color}${s.id===subj.id?' on':''}" onclick="setTContentSubj('${s.id}')"><div class="subj-tab-dot" style="background:var(--${s.color}-l)"></div>${s.name}</div>`).join('')}</div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div style="font-family:Fraunces,serif;font-weight:700;font-size:1.2rem">${subj.topics.length} temaer i ${subj.name}</div>
-    <button class="btn btn-p btn-sm" onclick="addTopic('${subj.id}')">+ Nytt tema</button>
-  </div>`;
+  const c=subj.color;
+
+  let html='';
+  html+='<div class="pg-eyebrow" style="color:var(--'+c+')">Innhold</div>';
+  html+='<div class="pg-title">Rediger innhold</div>';
+  html+='<div class="subj-tabs">';
+  subjects.forEach(s=>{
+    html+='<div class="subj-tab t-'+s.color+(s.id===subj.id?' on':'')+'" onclick="setTContentSubj(\''+s.id+'\')">';
+    html+='<div class="subj-tab-dot" style="background:var(--'+s.color+'-l)"></div>'+escH(s.name)+'</div>';
+  });
+  html+='</div>';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+  html+='<div style="font-family:Fraunces,serif;font-weight:700;font-size:1.2rem">'+subj.topics.length+' temaer i '+escH(subj.name)+'</div>';
+  html+='<button class="btn btn-p btn-sm" onclick="addTopic(\''+subj.id+'\')">+ Nytt tema</button></div>';
+
   subj.topics.forEach((topic,ti)=>{
-    html+=`<div class="topic-item" id="ti_${subj.id}_${ti}">
-      <div class="topic-item-hdr" onclick="togTopic('${subj.id}',${ti})">
-        <div class="topic-num-badge" style="background:var(--${subj.color}-pale);color:var(--${subj.color})">${ti+1}</div>
-        <div class="topic-name-d">${topic.name}${topic.module?`<span class="mod-badge">${escH(topic.module)}</span>`:''}</div>
-        <div class="topic-meta-d">${topic.tasks.length} oppg.</div>
-        <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
-          <button class="btn btn-d btn-xs" onclick="deleteTopic('${subj.id}',${ti})">Slett</button>
-        </div>
-        <div class="topic-tog">▼</div>
-      </div>
-      <div class="topic-body">
-        <!-- TEMANAVN OG MODUL -->
-        <div class="frow" style="margin-bottom:14px">
-          <div class="fg" style="margin:0"><label class="fl">Temanavn</label>
-            <input class="fi" value="${escH(topic.name)}" onchange="updateTF('${subj.id}',${ti},'name',this.value)"></div>
-          <div class="fg" style="margin:0"><label class="fl">Modul / nivå (f.eks. Modul A, Spor 2)</label>
-            <input class="fi" value="${escH(topic.module||'')}" placeholder="F.eks. Modul A" onchange="updateTF('${subj.id}',${ti},'module',this.value)"></div>
-        </div>
+    const sid=subj.id;
+    html+='<div class="topic-item" id="ti_'+sid+'_'+ti+'">';
+    html+='<div class="topic-item-hdr" onclick="togTopic(\''+sid+'\','+ti+')">';
+    html+='<div class="topic-num-badge" style="background:var(--'+c+'-pale);color:var(--'+c+')">'+(ti+1)+'</div>';
+    html+='<div class="topic-name-d">'+escH(topic.name)+(topic.module?'<span class="mod-badge">'+escH(topic.module)+'</span>':'')+'</div>';
+    html+='<div class="topic-meta-d">'+topic.tasks.length+' oppg.</div>';
+    html+='<div style="display:flex;gap:6px" onclick="event.stopPropagation()">';
+    html+='<button class="btn btn-d btn-xs" onclick="deleteTopic(\''+sid+'\','+ti+')">Slett</button></div>';
+    html+='<div class="topic-tog">▼</div></div>';
+    html+='<div class="topic-body">';
 
-        <!-- KOMPETANSEMÅL -->
-        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-weight:600;font-size:.87rem">🎯 Kompetansemål</div>
-            <button class="btn btn-s btn-xs" onclick="addKm('${subj.id}',${ti})">+ Mål</button>
-          </div>
-          ${(topic.km||[]).map((k,ki)=>`
-            <div style="display:flex;gap:8px;margin-bottom:6px">
-              <input class="fi" style="flex:1" placeholder="Etter opplæringen skal eleven kunne..." value="${escH(k)}" onchange="updKm('${subj.id}',${ti},${ki},this.value)">
-              <button class="btn btn-d btn-xs" onclick="delKm('${subj.id}',${ti},${ki})">✕</button>
-            </div>`).join('')}
-          ${!(topic.km||[]).length?`<div style="font-size:.76rem;color:var(--ink-s)">Ingen kompetansemål ennå. Klikk + Mål for å legge til.</div>`:''}
-        </div>
+    // TEMANAVN
+    html+='<div class="frow" style="margin-bottom:14px">';
+    html+='<div class="fg" style="margin:0"><label class="fl">Temanavn</label>';
+    html+='<input class="fi" value="'+escH(topic.name)+'" onchange="updateTF(\''+sid+'\','+ti+',\'name\',this.value)"></div>';
+    html+='<div class="fg" style="margin:0"><label class="fl">Modul / nivå</label>';
+    html+='<input class="fi" value="'+escH(topic.module||'')+'" placeholder="F.eks. Modul A" onchange="updateTF(\''+sid+'\','+ti+',\'module\',this.value)"></div></div>';
 
-        <!-- VIDEOER -->
-        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-weight:600;font-size:.87rem">🎬 Videoer</div>
-            <button class="btn btn-s btn-xs" onclick="addVideo('${subj.id}',${ti})">+ Video</button>
-          </div>
-          ${(topic.videos||[{title:topic.videoTitle||'',url:topic.videoUrl||''}]).map((v,vi)=>`
-            <div style="background:white;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border)">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-                <span style="font-size:.74rem;font-weight:600;color:var(--${subj.color})">Video ${vi+1}</span>
-                <button class="btn btn-d btn-xs" onclick="delVideo('${subj.id}',${ti},${vi})">✕</button>
-              </div>
-              <div class="frow">
-                <div class="fg" style="margin:0"><label class="fl">Tittel</label>
-                  <input class="fi" value="${escH(v.title||'')}" placeholder="Videotittel..." onchange="updVideo('${subj.id}',${ti},${vi},'title',this.value)"></div>
-                <div class="fg" style="margin:0"><label class="fl">URL (YouTube/Vimeo)</label>
-                  <input class="fi" value="${escH(v.url||'')}" placeholder="https://youtube.com/..." onchange="updVideo('${subj.id}',${ti},${vi},'url',this.value)"></div>
-              </div>
-            </div>`).join('')}
-        </div>
+    // KOMPETANSEMÅL
+    html+='<div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:.87rem">🎯 Kompetansemål</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addKm(\''+sid+'\','+ti+')">+ Mål</button></div>';
+    (topic.km||[]).forEach((k,ki)=>{
+      html+='<div style="display:flex;gap:8px;margin-bottom:6px">';
+      html+='<input class="fi" style="flex:1" placeholder="Etter opplæringen skal eleven kunne..." value="'+escH(k)+'" onchange="updKm(\''+sid+'\','+ti+','+ki+',this.value)">';
+      html+='<button class="btn btn-d btn-xs" onclick="delKm(\''+sid+'\','+ti+','+ki+')">✕</button></div>';
+    });
+    if(!(topic.km||[]).length) html+='<div style="font-size:.76rem;color:var(--ink-s)">Ingen kompetansemål ennå.</div>';
+    html+='</div>';
 
-        <!-- TEKSTER -->
-        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-weight:600;font-size:.87rem">📄 Tekster</div>
-            <button class="btn btn-s btn-xs" onclick="addText('${subj.id}',${ti})">+ Tekst</button>
-          </div>
-          <div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">Tekster med oversettelse og lyd. Elevene blar gjennom én etter én.</div>
-          ${(topic.texts||[]).map((tx,txi)=>`
-            <div style="background:white;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border)">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-                <span style="font-size:.74rem;font-weight:600;color:var(--${subj.color})">Tekst ${txi+1}</span>
-                <button class="btn btn-d btn-xs" onclick="delText('${subj.id}',${ti},${txi})">✕</button>
-              </div>
-              <input class="fi" style="margin-bottom:7px" placeholder="Tittel på teksten..." value="${escH(tx.title||'')}" onchange="updText('${subj.id}',${ti},${txi},'title',this.value)">
-              <textarea class="fta" style="min-height:80px" rows="4" placeholder="Skriv teksten her..." onchange="updText('${subj.id}',${ti},${txi},'body',this.value)">${escH(tx.body||'')}</textarea>
-            </div>`).join('')}
-          ${!(topic.texts||[]).length?`<div style="font-size:.76rem;color:var(--ink-s)">Ingen tekster ennå.</div>`:''}
-        </div>
+    // VIDEOER
+    html+='<div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:.87rem">🎬 Videoer</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addVideo(\''+sid+'\','+ti+')">+ Video</button></div>';
+    html+='<div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">YouTube-videoer som elevene kan se direkte på siden.</div>';
+    const vids=topic.videos||[];
+    vids.forEach((v,vi)=>{
+      html+='<div style="background:white;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border)">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">';
+      html+='<span style="font-size:.74rem;font-weight:600;color:var(--'+c+')">Video '+(vi+1)+'</span>';
+      html+='<button class="btn btn-d btn-xs" onclick="delVideo(\''+sid+'\','+ti+','+vi+')">✕</button></div>';
+      html+='<div class="frow"><div class="fg" style="margin:0"><label class="fl">Tittel</label>';
+      html+='<input class="fi" value="'+escH(v.title||'')+'" placeholder="Videotittel" onchange="updVideo(\''+sid+'\','+ti+','+vi+',\'title\',this.value)"></div>';
+      html+='<div class="fg" style="margin:0"><label class="fl">URL (YouTube)</label>';
+      html+='<input class="fi" value="'+escH(v.url||'')+'" placeholder="https://youtube.com/..." onchange="updVideo(\''+sid+'\','+ti+','+vi+',\'url\',this.value)"></div></div></div>';
+    });
+    if(!vids.length) html+='<div style="font-size:.76rem;color:var(--ink-s)">Ingen videoer ennå.</div>';
+    html+='</div>';
 
-        <!-- BILDER -->
-        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-weight:600;font-size:.87rem">🖼️ Bilder</div>
-            <button class="btn btn-s btn-xs" onclick="addImg('${subj.id}',${ti})">+ Bilde</button>
-          </div>
-          <div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">Elevene blar gjennom bildene én etter én.</div>
-          ${(topic.images||[]).map((img,imi)=>`
-            <div style="background:white;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border)">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-                <span style="font-size:.74rem;font-weight:600;color:var(--${subj.color})">Bilde ${imi+1}</span>
-                <button class="btn btn-d btn-xs" onclick="delImg('${subj.id}',${ti},${imi})">✕</button>
-              </div>
-              ${img.data?`<img src="${img.data}" style="max-height:100px;border-radius:6px;margin-bottom:7px;display:block">`:''}
-              <div class="img-upload-area" onclick="document.getElementById('fimg_${subj.id}_${ti}_${imi}').click()" style="padding:10px">
-                <div style="font-size:.8rem;color:var(--ink-s)">${img.data?'Klikk for å bytte':'📷 Klikk for å laste opp'}</div>
-              </div>
-              <input type="file" id="fimg_${subj.id}_${ti}_${imi}" accept="image/*" style="display:none" onchange="uploadImg('${subj.id}',${ti},${imi},this)">
-              <input class="fi" style="margin-top:7px" placeholder="Bildetekst (valgfritt)..." value="${escH(img.caption||'')}" onchange="updImgCaption('${subj.id}',${ti},${imi},this.value)">
-            </div>`).join('')}
-          ${!(topic.images||[]).length?`<div style="font-size:.76rem;color:var(--ink-s)">Ingen bilder ennå.</div>`:''}
-        </div>
+    // TEKSTER
+    html+='<div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:.87rem">📄 Tekster</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addText(\''+sid+'\','+ti+')">+ Tekst</button></div>';
+    html+='<div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">Tekster med oversettelse og lyd.</div>';
+    (topic.texts||[]).forEach((tx,txi)=>{
+      html+='<div style="background:white;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border)">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">';
+      html+='<span style="font-size:.74rem;font-weight:600;color:var(--'+c+')">Tekst '+(txi+1)+'</span>';
+      html+='<button class="btn btn-d btn-xs" onclick="delText(\''+sid+'\','+ti+','+txi+')">✕</button></div>';
+      html+='<input class="fi" style="margin-bottom:7px" placeholder="Tittel..." value="'+escH(tx.title||'')+'" onchange="updText(\''+sid+'\','+ti+','+txi+',\'title\',this.value)">';
+      html+='<textarea class="fta" style="min-height:80px" rows="4" placeholder="Skriv teksten her..." onchange="updText(\''+sid+'\','+ti+','+txi+',\'body\',this.value)">'+escH(tx.body||'')+'</textarea>';
+      html+='<div style="margin-top:6px;display:flex;align-items:center;gap:8px">';
+      html+='<label class="btn btn-s btn-xs" style="cursor:pointer;margin:0">📄 Last opp tekstfil';
+      html+='<input type="file" accept=".txt,.md" style="display:none" onchange="uploadTextFile(\''+sid+'\','+ti+','+txi+',this)"></label>';
+      html+='<span style="font-size:.7rem;color:var(--ink-s)">.txt eller .md</span></div></div>';
+    });
+    if(!(topic.texts||[]).length) html+='<div style="font-size:.76rem;color:var(--ink-s)">Ingen tekster ennå.</div>';
+    html+='</div>';
 
-        <!-- REGLER -->
-        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-weight:600;font-size:.87rem">📏 Regler</div>
-            <button class="btn btn-s btn-xs" onclick="addRule('${subj.id}',${ti})">+ Regel</button>
-          </div>
-          ${(topic.rules||[]).map((r,ri)=>`
-            <div style="display:flex;gap:8px;margin-bottom:7px;border-left:3px solid var(--${subj.color});padding-left:10px">
-              <textarea class="fta" style="min-height:48px;flex:1" rows="2" onchange="updRule('${subj.id}',${ti},${ri},this.value)">${escH(r.text)}</textarea>
-              <button class="btn btn-d btn-xs" style="flex-shrink:0;margin-top:2px" onclick="delRule('${subj.id}',${ti},${ri})">✕</button>
-            </div>`).join('')}
-          ${!(topic.rules||[]).length?`<div style="font-size:.76rem;color:var(--ink-s)">Ingen regler ennå.</div>`:''}
-        </div>
+    // BILDER
+    html+='<div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:.87rem">🖼️ Bilder</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addImg(\''+sid+'\','+ti+')">+ Bilde</button></div>';
+    html+='<div style="font-size:.74rem;color:var(--ink-s);margin-bottom:9px">Elevene blar gjennom bildene én etter én.</div>';
+    (topic.images||[]).forEach((img,imi)=>{
+      html+='<div style="background:white;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border)">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">';
+      html+='<span style="font-size:.74rem;font-weight:600;color:var(--'+c+')">Bilde '+(imi+1)+'</span>';
+      html+='<button class="btn btn-d btn-xs" onclick="delImg(\''+sid+'\','+ti+','+imi+')">✕</button></div>';
+      html+=(img.data?'<img src="'+img.data+'" style="max-height:100px;border-radius:6px;margin-bottom:7px;display:block">':'');
+      html+='<div class="img-upload-area" onclick="document.getElementById(\'fimg_'+sid+'_'+ti+'_'+imi+'\').click()">';
+      html+='<div style="font-size:.8rem;color:var(--ink-s)">'+(img.data?'Klikk for å bytte bilde':'📷 Klikk for å laste opp')+'</div></div>';
+      html+='<input type="file" id="fimg_'+sid+'_'+ti+'_'+imi+'" accept="image/*" style="display:none" onchange="uploadImg(\''+sid+'\','+ti+','+imi+',this)">';
+      html+='<input class="fi" style="margin-top:7px" placeholder="Bildetekst (valgfritt)" value="'+escH(img.caption||'')+'" onchange="updImgCaption(\''+sid+'\','+ti+','+imi+',this.value)">';
+      html+='</div>';
+    });
+    if(!(topic.images||[]).length) html+='<div style="font-size:.76rem;color:var(--ink-s)">Ingen bilder ennå.</div>';
+    html+='</div>';
 
-        <!-- EKSEMPLER -->
-        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-weight:600;font-size:.87rem">💡 Eksempler</div>
-            <button class="btn btn-s btn-xs" onclick="addExample('${subj.id}',${ti})">+ Eksempel</button>
-          </div>
-          ${(topic.examples||[]).map((ex,exi)=>`
-            <div style="background:var(--${subj.color}-pale);border-radius:8px;padding:11px;margin-bottom:8px;border:1px solid var(--border)">
-              <div style="display:flex;gap:8px;margin-bottom:7px">
-                <input class="fi" style="flex:1" placeholder="Tittel" value="${escH(ex.title||'')}" onchange="updEx('${subj.id}',${ti},${exi},'title',this.value)">
-                <button class="btn btn-d btn-xs" onclick="delEx('${subj.id}',${ti},${exi})">✕</button>
-              </div>
-              <textarea class="fta" style="min-height:60px" rows="3" placeholder="Eksempeltekst..." onchange="updEx('${subj.id}',${ti},${exi},'text',this.value)">${escH(ex.text||'')}</textarea>
-            </div>`).join('')}
-          ${!(topic.examples||[]).length?`<div style="font-size:.76rem;color:var(--ink-s)">Ingen eksempler ennå.</div>`:''}
-        </div>
+    // REGLER
+    html+='<div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:.87rem">📏 Regler</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addRule(\''+sid+'\','+ti+')">+ Regel</button></div>';
+    (topic.rules||[]).forEach((r,ri)=>{
+      html+='<div style="display:flex;gap:8px;margin-bottom:7px;border-left:3px solid var(--'+c+');padding-left:9px">';
+      html+='<textarea class="fta" style="min-height:48px;flex:1" rows="2" onchange="updRule(\''+sid+'\','+ti+','+ri+',this.value)">'+escH(r.text||'')+'</textarea>';
+      html+='<button class="btn btn-d btn-xs" style="flex-shrink:0;margin-top:2px" onclick="delRule(\''+sid+'\','+ti+','+ri+')">✕</button></div>';
+    });
+    if(!(topic.rules||[]).length) html+='<div style="font-size:.76rem;color:var(--ink-s)">Ingen regler ennå.</div>';
+    html+='</div>';
 
-        <!-- DISKUSJONSSPØRSMÅL -->
-        <div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-weight:600;font-size:.87rem">💬 Diskusjonsspørsmål</div>
-            <button class="btn btn-s btn-xs" onclick="addDiscQ('${subj.id}',${ti})">+ Spørsmål</button>
-          </div>
-          <div style="font-size:.74rem;color:var(--ink-s);margin-bottom:10px">Aktiver et spørsmål for å sende det til elevenes skjerm. Kun ett kan være aktivt om gangen.</div>
-          ${(topic.discQs||[]).length===0?`<div style="font-size:.76rem;color:var(--ink-s)">Ingen diskusjonsspørsmål ennå.</div>`:''}
-          ${(topic.discQs||[]).map((dq,dqi)=>{
-            const active=getActiveDisc();
-            const isActive=active&&active.id===dq.id;
-            const typeLabels={open:'📄 Åpent',mc:'🔘 Flervalg (1)',mcmulti:'☑️ Flervalg (flere)',fill:'✍️ Fyll inn',filldrop:'📋 Fyll inn (nedtrekk)',drag:'🔀 Dra og slipp'};
-            const typeLabel=typeLabels[dq.type]||dq.type;
-            const liveAnswers=LS.get('ll_disc_answers_'+dq.id)||[];
+    // EKSEMPLER
+    html+='<div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:.87rem">💡 Eksempler</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addExample(\''+sid+'\','+ti+')">+ Eksempel</button></div>';
+    (topic.examples||[]).forEach((ex,exi)=>{
+      html+='<div style="background:var(--'+c+'-pale);border-radius:8px;padding:10px;margin-bottom:8px">';
+      html+='<div style="display:flex;gap:8px;margin-bottom:7px">';
+      html+='<input class="fi" style="flex:1" placeholder="Tittel" value="'+escH(ex.title||'')+'" onchange="updEx(\''+sid+'\','+ti+','+exi+',\'title\',this.value)">';
+      html+='<button class="btn btn-d btn-xs" onclick="delEx(\''+sid+'\','+ti+','+exi+')">✕</button></div>';
+      html+='<textarea class="fta" style="min-height:60px" rows="3" placeholder="Eksempelinnhold..." onchange="updEx(\''+sid+'\','+ti+','+exi+',\'body\',this.value)">'+escH(ex.body||ex.text||'')+'</textarea></div>';
+    });
+    if(!(topic.examples||[]).length) html+='<div style="font-size:.76rem;color:var(--ink-s)">Ingen eksempler ennå.</div>';
+    html+='</div>';
 
-            // Type-specific editor fields
-            let typeFields='';
-            if(dq.type==='mc'||dq.type==='mcmulti'){
-              typeFields=`<label class="fl" style="margin-bottom:6px">Alternativer</label>
-                ${[0,1,2,3].map(oi=>`<div style="display:flex;gap:7px;align-items:center;margin-bottom:5px">
-                  <input type="${dq.type==='mc'?'radio':'checkbox'}" name="dqcorr_${subj.id}_${ti}_${dqi}" ${dq.type==='mc'?dq.correct===oi:(dq.correct||[]).includes(oi)?'checked':''} style="accent-color:var(--math)" onchange="updDiscQCorrect('${subj.id}',${ti},${dqi},${oi},this.checked,'${dq.type}')">
-                  <input class="fi" style="flex:1" placeholder="Alt. ${String.fromCharCode(65+oi)}" value="${escH((dq.opts&&dq.opts[oi])||'')}" onchange="updDiscQOpt('${subj.id}',${ti},${dqi},${oi},this.value)">
-                </div>`).join('')}`;
-            }
-            if(dq.type==='fill'){
-              typeFields=`<div class="fg" style="margin-bottom:6px"><label class="fl">Setning — bruk ___ der eleven skal fylle inn</label>
-                <textarea class="fta" style="min-height:48px" rows="2" placeholder="F.eks: Norges hovedstad er ___" onchange="updDiscQField('${subj.id}',${ti},${dqi},'text',this.value)">${escH(dq.text||'')}</textarea></div>
-                <div class="fg"><label class="fl">Riktige svar (kommaseparert, ett per ___)</label>
-                <input class="fi" value="${(dq.blanks||[]).join(',')}" placeholder="Oslo,Bergen" onchange="updDiscQField('${subj.id}',${ti},${dqi},'blanks',this.value.split(',').map(s=>s.trim()))"></div>`;
-            }
-            if(dq.type==='filldrop'){
-              typeFields=`<div class="fg" style="margin-bottom:6px"><label class="fl">Setning — bruk ___ der eleven skal velge</label>
-                <textarea class="fta" style="min-height:48px" rows="2" placeholder="F.eks: Norges hovedstad er ___" onchange="updDiscQField('${subj.id}',${ti},${dqi},'text',this.value)">${escH(dq.text||'')}</textarea></div>
-                <div class="fg" style="margin-bottom:6px"><label class="fl">Nedtrekksvalg (kommaseparert)</label>
-                <input class="fi" value="${(dq.opts||[]).join(',')}" placeholder="Oslo,Bergen,Stavanger,Tromsø" onchange="updDiscQField('${subj.id}',${ti},${dqi},'opts',this.value.split(',').map(s=>s.trim()))"></div>
-                <div class="fg"><label class="fl">Riktig svar</label>
-                <input class="fi" value="${escH(dq.correct||'')}" placeholder="Oslo" onchange="updDiscQField('${subj.id}',${ti},${dqi},'correct',this.value)"></div>`;
-            }
-            if(dq.type==='drag'){
-              typeFields=`<div class="fg" style="margin-bottom:6px"><label class="fl">Ord/elementer å dra (skill med |)</label>
-                <input class="fi" value="${(dq.items||[]).join('|')}" placeholder="Hund|Katt|Ørn|Laks" onchange="updDiscQField('${subj.id}',${ti},${dqi},'items',this.value.split('|').map(s=>s.trim()))"></div>
-                <div class="fg"><label class="fl">Kategorier (skill med |)</label>
-                <input class="fi" value="${(dq.zones||[]).join('|')}" placeholder="Pattedyr|Fugl|Fisk" onchange="updDiscQField('${subj.id}',${ti},${dqi},'zones',this.value.split('|').map(s=>s.trim()))"></div>`;
-            }
+    // DISKUSJONSSPØRSMÅL
+    html+='<div style="background:var(--mist);border-radius:9px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:.87rem">💬 Diskusjonsspørsmål</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addDiscQ(\''+sid+'\','+ti+')">+ Spørsmål</button></div>';
+    html+='<div style="font-size:.74rem;color:var(--ink-s);margin-bottom:10px">Aktiver et spørsmål for å sende det til elevenes skjerm.</div>';
+    if(!(topic.discQs||[]).length) html+='<div style="font-size:.76rem;color:var(--ink-s)">Ingen diskusjonsspørsmål ennå.</div>';
+    (topic.discQs||[]).forEach((dq,dqi)=>{
+      const active=getActiveDisc();
+      const isActive=active&&active.id===dq.id;
+      const typeLabels={open:'📄 Åpent',mc:'🔘 Flervalg (1)',mcmulti:'☑️ Flervalg (flere)',fill:'✍️ Fyll inn',filldrop:'📋 Nedtrekk',drag:'🔀 Dra og slipp'};
+      const liveAnswers=LS.get('ll_disc_answers_'+dq.id)||[];
+      html+='<div style="background:white;border-radius:9px;padding:12px 14px;margin-bottom:8px;border:2px solid '+(isActive?'var(--math)':'var(--border)')+'">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">';
+      html+='<div style="display:flex;gap:6px;align-items:center">';
+      html+='<span style="font-size:.68rem;font-weight:700;color:var(--'+c+')">Sp. '+(dqi+1)+'</span>';
+      html+='<span style="font-size:.67rem;padding:2px 7px;border-radius:8px;background:var(--'+c+'-pale);color:var(--'+c+')">'+(typeLabels[dq.type]||dq.type)+'</span>';
+      if(isActive) html+='<span style="font-size:.67rem;padding:2px 7px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700">● AKTIV</span>';
+      html+='</div><div style="display:flex;gap:5px">';
+      if(isActive){
+        html+='<button class="btn btn-d btn-xs" onclick="discStop()">⏹ Stopp</button>';
+        html+='<button class="btn btn-s btn-xs" onclick="openBoardView()">📺 Tavle</button>';
+      } else {
+        html+='<button class="btn btn-p btn-xs" onclick="discActivate(\''+dq.id+'\',\''+sid+'\','+ti+')">▶ Aktiver</button>';
+      }
+      html+='<button class="btn btn-d btn-xs" onclick="delDiscQ(\''+sid+'\','+ti+','+dqi+')">✕</button></div></div>';
+      // Type selector
+      html+='<div style="margin-bottom:8px"><label class="fl" style="margin-bottom:4px">Type</label>';
+      html+='<select class="fsel" style="font-size:.78rem;padding:4px 8px;width:auto" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'type\',this.value);renderTContent();setTimeout(()=>document.getElementById(\'ti_'+sid+'_'+ti+'\')?.classList.add(\'open\'),50)">';
+      ['open','mc','mcmulti','fill','filldrop','drag'].forEach(t=>{
+        html+='<option value="'+t+'"'+(dq.type===t?' selected':'')+'>'+{open:'📄 Åpent svar',mc:'🔘 Flervalg (1)',mcmulti:'☑️ Flervalg (flere)',fill:'✍️ Fyll inn',filldrop:'📋 Nedtrekk',drag:'🔀 Dra og slipp'}[t]+'</option>';
+      });
+      html+='</select></div>';
+      // Question text
+      const showTextarea=!['fill','filldrop','drag'].includes(dq.type);
+      if(showTextarea){
+        html+='<div style="margin-bottom:8px"><label class="fl" style="margin-bottom:4px">Spørsmålstekst</label>';
+        html+='<textarea class="fta" style="min-height:56px" rows="2" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'text\',this.value)">'+escH(dq.text||'')+'</textarea></div>';
+      }
+      // Type-specific fields
+      if(dq.type==='mc'||dq.type==='mcmulti'){
+        html+='<label class="fl" style="margin-bottom:6px">Alternativer</label>';
+        [0,1,2,3].forEach(oi=>{
+          const checked=dq.type==='mc'?dq.correct===oi:(dq.correct||[]).includes(oi);
+          html+='<div style="display:flex;gap:7px;align-items:center;margin-bottom:5px">';
+          html+='<input type="'+(dq.type==='mc'?'radio':'checkbox')+'" name="dqcorr_'+sid+'_'+ti+'_'+dqi+'" '+(checked?'checked ':'')+' style="accent-color:var(--math)" onchange="updDiscQCorrect(\''+sid+'\','+ti+','+dqi+','+oi+',this.checked,\''+dq.type+'\')">';
+          html+='<input class="fi" style="flex:1" placeholder="Alt. '+String.fromCharCode(65+oi)+'" value="'+escH((dq.opts&&dq.opts[oi])||'')+'" onchange="updDiscQOpt(\''+sid+'\','+ti+','+dqi+','+oi+',this.value)"></div>';
+        });
+      }
+      if(dq.type==='fill'){
+        html+='<div class="fg" style="margin-bottom:6px"><label class="fl">Setning med ___ for blanke felt</label>';
+        html+='<textarea class="fta" style="min-height:48px" rows="2" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'text\',this.value)">'+escH(dq.text||'')+'</textarea></div>';
+        html+='<div class="fg"><label class="fl">Riktige svar (kommaseparert)</label>';
+        html+='<input class="fi" value="'+escH((dq.blanks||[]).join(','))+'" placeholder="Oslo,Bergen" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'blanks\',this.value.split(\',\').map(s=>s.trim()))"></div>';
+      }
+      if(dq.type==='filldrop'){
+        html+='<div class="fg" style="margin-bottom:6px"><label class="fl">Setning med ___</label>';
+        html+='<textarea class="fta" style="min-height:48px" rows="2" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'text\',this.value)">'+escH(dq.text||'')+'</textarea></div>';
+        html+='<div class="fg" style="margin-bottom:6px"><label class="fl">Nedtrekksvalg (kommaseparert)</label>';
+        html+='<input class="fi" value="'+escH((dq.opts||[]).join(','))+'" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'opts\',this.value.split(\',\').map(s=>s.trim()))"></div>';
+        html+='<div class="fg"><label class="fl">Riktig svar</label>';
+        html+='<input class="fi" value="'+escH(dq.correct||'')+'" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'correct\',this.value)"></div>';
+      }
+      if(dq.type==='drag'){
+        html+='<div class="fg" style="margin-bottom:6px"><label class="fl">Elementer å dra (skill med |)</label>';
+        html+='<input class="fi" value="'+escH((dq.items||[]).join('|'))+'" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'items\',this.value.split(\'|\').map(s=>s.trim()))"></div>';
+        html+='<div class="fg"><label class="fl">Kategorier (skill med |)</label>';
+        html+='<input class="fi" value="'+escH((dq.zones||[]).join('|'))+'" onchange="updDiscQField(\''+sid+'\','+ti+','+dqi+',\'zones\',this.value.split(\'|\').map(s=>s.trim()))"></div>';
+      }
+      // Live answers
+      if(isActive&&liveAnswers.length){
+        html+='<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">';
+        html+='<div style="font-size:.72rem;font-weight:600;color:var(--ink-s);margin-bottom:7px">📬 '+liveAnswers.length+' svar mottatt:</div>';
+        liveAnswers.forEach(a=>{
+          html+='<div style="display:flex;gap:9px;padding:7px 10px;background:var(--mist);border-radius:7px;margin-bottom:4px">';
+          html+='<span style="font-size:.7rem;font-weight:700;color:var(--math);min-width:80px">'+escH(a.name)+'</span>';
+          html+='<span style="font-size:.82rem;flex:1">'+escH(a.answer)+'</span>';
+          html+='<span style="font-size:.65rem;color:var(--ink-s)">'+new Date(a.ts).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'})+'</span></div>';
+        });
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    html+='</div>';
 
-            const showTextarea=!['fill','filldrop','drag'].includes(dq.type);
+    // OPPGAVER
+    html+='<div>';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">';
+    html+='<div style="font-weight:600;font-size:.87rem">✏️ Oppgaver</div>';
+    html+='<button class="btn btn-s btn-xs" onclick="addTask(\''+sid+'\','+ti+')">+ Oppgave</button></div>';
+    topic.tasks.forEach((task,tki)=>{
+      const tid=task.type||'num';
+      const typeOpts=['num','mc','mcmulti','tf','fill','sort','drag','open','image','crossword','wordsearch','listenwrite'];
+      const typeLabels2={num:'🔢 Tallsvar',mc:'🔘 Flervalg (1 svar)',mcmulti:'☑️ Flervalg (flere svar)',tf:'✅ Sant/Usant',fill:'✍️ Fyll inn ord',sort:'📊 Sortering',drag:'🔀 Dra og slipp',open:'📄 Åpen oppgave',image:'🖼️ Bilde-oppgave',crossword:'🔤 Kryssord',wordsearch:'🔍 Finn ordene',listenwrite:'🔊 Lytt og skriv'};
+      let typeOptsHtml='';
+      typeOpts.forEach(t=>{ typeOptsHtml+='<option value="'+t+'"'+(tid===t?' selected':'')+'>'+typeLabels2[t]+'</option>'; });
 
-            return `<div style="background:white;border-radius:9px;padding:12px 14px;margin-bottom:8px;border:2px solid ${isActive?'var(--math)':'var(--border)'}">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-                <div style="display:flex;gap:6px;align-items:center">
-                  <span style="font-size:.68rem;font-weight:700;color:var(--${subj.color})">Sp. ${dqi+1}</span>
-                  <span style="font-size:.67rem;padding:2px 7px;border-radius:8px;background:var(--${subj.color}-pale);color:var(--${subj.color})">${typeLabel}</span>
-                  ${isActive?`<span style="font-size:.67rem;padding:2px 7px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700">● AKTIV</span>`:''}
-                </div>
-                <div style="display:flex;gap:5px">
-                  ${isActive
-                    ?`<button class="btn btn-d btn-xs" onclick="discStop()">⏹ Stopp</button>
-                       <button class="btn btn-s btn-xs" onclick="openBoardView()">📺 Tavle</button>`
-                    :`<button class="btn btn-p btn-xs" onclick="discActivate('${dq.id}','${subj.id}',${ti})">▶ Aktiver</button>`}
-                  <button class="btn btn-d btn-xs" onclick="delDiscQ('${subj.id}',${ti},${dqi})">✕</button>
-                </div>
-              </div>
-              <div style="margin-bottom:8px">
-                <label class="fl" style="margin-bottom:4px">Type</label>
-                <select class="fsel" style="font-size:.78rem;padding:4px 8px;width:auto" onchange="updDiscQField('${subj.id}',${ti},${dqi},'type',this.value);renderTContent();setTimeout(()=>document.getElementById('ti_${subj.id}_${ti}')?.classList.add('open'),50)">
-                  <option value="open"${dq.type==='open'?' selected':''}>📄 Åpent svar</option>
-                  <option value="mc"${dq.type==='mc'?' selected':''}>🔘 Flervalg (1 riktig)</option>
-                  <option value="mcmulti"${dq.type==='mcmulti'?' selected':''}>☑️ Flervalg (flere riktige)</option>
-                  <option value="fill"${dq.type==='fill'?' selected':''}>✍️ Fyll inn ord</option>
-                  <option value="filldrop"${dq.type==='filldrop'?' selected':''}>📋 Fyll inn (nedtrekk)</option>
-                  <option value="drag"${dq.type==='drag'?' selected':''}>🔀 Dra og slipp</option>
-                </select>
-              </div>
-              ${showTextarea?`<div style="margin-bottom:8px">
-                <label class="fl" style="margin-bottom:4px">Spørsmålstekst</label>
-                ${symBar('discq_${subj.id}_${ti}_${dqi}')}
-                <textarea class="fta" id="discq_${subj.id}_${ti}_${dqi}" style="min-height:56px" rows="2" onchange="updDiscQField('${subj.id}',${ti},${dqi},'text',this.value)">${escH(dq.text||'')}</textarea>
-              </div>`:''}
-              ${typeFields}
-              ${isActive&&liveAnswers.length?`
-                <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-                  <div style="font-size:.72rem;font-weight:600;color:var(--ink-s);margin-bottom:7px">📬 ${liveAnswers.length} svar mottatt:</div>
-                  ${liveAnswers.map(a=>`<div style="display:flex;gap:9px;padding:7px 10px;background:var(--mist);border-radius:7px;margin-bottom:4px">
-                    <span style="font-size:.7rem;font-weight:700;color:var(--math);min-width:80px">${escH(a.name)}</span>
-                    <span style="font-size:.82rem;flex:1">${escH(a.answer)}</span>
-                    <span style="font-size:.65rem;color:var(--ink-s)">${new Date(a.ts).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'})}</span>
-                  </div>`).join('')}
-                </div>`:''}
-            </div>`;
-          }).join('')}
-        </div>
+      let typeFields='';
+      if(tid==='num') typeFields='<div class="frow"><div class="fg" style="margin:0"><label class="fl">Riktig svar (tall)</label><input class="fi" type="number" value="'+(task.ans||0)+'" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'ans\',parseFloat(this.value))"></div><div class="fg" style="margin:0"><label class="fl">Hint</label><input class="fi" value="'+escH(task.hint||'')+'" placeholder="Valgfritt hint..." onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'hint\',this.value)"></div></div>';
+      if(tid==='mc'){
+        typeFields='<div style="margin-bottom:8px"><label class="fl">Alternativer — merk riktig svar</label>';
+        [0,1,2,3].forEach(oi=>{
+          typeFields+='<div class="opt-row"><input type="radio" class="opt-radio" name="mc_'+sid+'_'+ti+'_'+tki+'" '+(task.correct===oi?'checked':'')+' onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'correct\','+oi+')"><input class="opt-inp" placeholder="Alt. '+String.fromCharCode(65+oi)+'" value="'+escH((task.opts&&task.opts[oi])||'')+'" onchange="updOpt(\''+sid+'\','+ti+','+tki+','+oi+',this.value)"></div>';
+        });
+        typeFields+='</div><div class="fg" style="margin:0"><label class="fl">Hint</label><input class="fi" value="'+escH(task.hint||'')+'" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'hint\',this.value)"></div>';
+      }
+      if(tid==='mcmulti'){
+        typeFields='<div style="margin-bottom:8px"><label class="fl">Alternativer — merk ALLE riktige svar</label>';
+        [0,1,2,3].forEach(oi=>{
+          typeFields+='<div class="opt-row"><input type="checkbox" class="opt-chk" '+((task.correct||[]).includes(oi)?'checked':'')+' onchange="updMCM(\''+sid+'\','+ti+','+tki+','+oi+',this.checked)"><input class="opt-inp" placeholder="Alt. '+String.fromCharCode(65+oi)+'" value="'+escH((task.opts&&task.opts[oi])||'')+'" onchange="updOpt(\''+sid+'\','+ti+','+tki+','+oi+',this.value)"></div>';
+        });
+        typeFields+='</div>';
+      }
+      if(tid==='tf') typeFields='<div class="fg"><label class="fl">Riktig svar</label><select class="fsel" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'correct\',this.value===\'true\')"><option value="true"'+(task.correct===true?' selected':'')+'>✅ Sant</option><option value="false"'+(task.correct===false?' selected':'')+'>❌ Usant</option></select></div><div class="fg"><label class="fl">Hint</label><input class="fi" value="'+escH(task.hint||'')+'" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'hint\',this.value)"></div>';
+      if(tid==='fill') typeFields='<div class="fg"><label class="fl">Tekst — bruk ___ der elevene skal fylle inn</label><textarea class="fta" rows="2" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'q\',this.value)">'+escH(task.q||'')+'</textarea></div><div class="fg" style="margin:0"><label class="fl">Riktige svar (kommaseparert, ett per ___)</label><input class="fi" value="'+escH((task.blanks||[]).join(','))+'" placeholder="svar1,svar2" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'blanks\',this.value.split(\',\').map(s=>s.trim()))"></div>';
+      if(tid==='sort') typeFields='<div class="fg"><label class="fl">Elementer i RIKTIG rekkefølge (skill med |)</label><input class="fi" value="'+escH((task.correct||[]).join('|'))+'" placeholder="Minst|Middels|Størst" onchange="setSortTask(\''+sid+'\','+ti+','+tki+',this.value)"></div>';
+      if(tid==='drag') typeFields='<div class="fg"><label class="fl">Ord/elementer å dra (skill med |)</label><input class="fi" value="'+escH((task.items||[]).join('|'))+'" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'items\',this.value.split(\'|\').map(s=>s.trim()))"></div><div class="fg" style="margin:0"><label class="fl">Kategorier (skill med |)</label><input class="fi" value="'+escH((task.zones||[]).join('|'))+'" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'zones\',this.value.split(\'|\').map(s=>s.trim()))"></div>';
+      if(tid==='open') typeFields='<div class="fg"><label class="fl">Veiledning til eleven</label><input class="fi" value="'+escH(task.guidance||'')+'" placeholder="F.eks: Skriv minst 3 setninger..." onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'guidance\',this.value)"></div>';
+      if(tid==='image') typeFields='<div class="fg"><label class="fl">Last opp bilde</label><div class="img-upload-area" onclick="document.getElementById(\'timg_'+sid+'_'+ti+'_'+tki+'\').click()">'+(task.imageData?'<img src="'+task.imageData+'" style="max-height:120px;border-radius:6px">':'<div style="font-size:1.4rem">📷</div><div style="font-size:.78rem;color:var(--ink-s);margin-top:4px">Klikk for å laste opp</div>')+'</div><input type="file" id="timg_'+sid+'_'+ti+'_'+tki+'" accept="image/*" style="display:none" onchange="uploadTaskImg(\''+sid+'\','+ti+','+tki+',this)"></div><div class="fg" style="margin:0"><label class="fl">Riktig svar</label><input class="fi" value="'+escH(task.ans||'')+'" placeholder="Hva skal elevene svare?" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'ans\',this.value)"></div>';
+      if(tid==='crossword'){
+        const rows=task.cwRows||[{word:'',hint:''}];
+        typeFields='<div class="fg"><label class="fl">Ord og hint</label><div id="cwRows_'+sid+'_'+ti+'_'+tki+'">';
+        rows.forEach((r,ri)=>{
+          typeFields+='<div class="frow" style="gap:6px;margin-bottom:6px"><input class="fi" style="flex:0 0 120px;text-transform:uppercase" placeholder="ORD" value="'+escH(r.word||'')+'" oninput="this.value=this.value.toUpperCase();cwUpdRow(\''+sid+'\','+ti+','+tki+','+ri+',\'word\',this.value)"><input class="fi" style="flex:1" placeholder="Hint / ledetråd" value="'+escH(r.hint||'')+'" oninput="cwUpdRow(\''+sid+'\','+ti+','+tki+','+ri+',\'hint\',this.value)"><button class="btn btn-d btn-xs" onclick="cwDelRow(\''+sid+'\','+ti+','+tki+','+ri+')">✕</button></div>';
+        });
+        typeFields+='</div><button class="btn btn-s btn-xs" style="margin-top:4px" onclick="cwAddRow(\''+sid+'\','+ti+','+tki+')">+ Legg til ord</button></div>';
+      }
+      if(tid==='wordsearch') typeFields='<div class="fg"><label class="fl">Ord å finne (kommaseparert)</label><input class="fi" value="'+escH((task.wsWords||[]).join(','))+'" placeholder="HUND,KATT,FISK,FUGL" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'wsWords\',this.value.toUpperCase().split(\',\').map(s=>s.trim()).filter(Boolean))"></div><div class="frow"><div class="fg" style="margin:0"><label class="fl">Gridstørrelse</label><select class="fsel" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'wsSize\',parseInt(this.value))"><option value="10"'+((task.wsSize||12)===10?' selected':'')+'>10×10</option><option value="12"'+((task.wsSize||12)===12?' selected':'')+'>12×12</option><option value="15"'+((task.wsSize||12)===15?' selected':'')+'>15×15</option></select></div></div>';
+      if(tid==='listenwrite') typeFields='<div class="fg"><label class="fl">Tekst som skal leses opp</label><textarea class="fta" rows="3" placeholder="Skriv setningen eller teksten her..." onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'lwText\',this.value)">'+escH(task.lwText||'')+'</textarea></div><div class="frow"><div class="fg" style="margin:0"><label class="fl">Antall avspillinger</label><select class="fsel" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'lwPlays\',parseInt(this.value))"><option value="1"'+((task.lwPlays||3)===1?' selected':'')+'>1 gang</option><option value="2"'+((task.lwPlays||3)===2?' selected':'')+'>2 ganger</option><option value="3"'+((task.lwPlays||3)===3?' selected':'')+'>3 ganger</option><option value="99"'+((task.lwPlays||3)===99?' selected':'')+'>Ubegrenset</option></select></div></div>';
 
-        <!-- TASKS -->
-        <div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-            <div style="font-weight:600;font-size:.87rem">✏️ Oppgaver</div>
-            <button class="btn btn-s btn-xs" onclick="addTask('${subj.id}',${ti})">+ Oppgave</button>
-          </div>
-          ${topic.tasks.map((task,tki)=>{
-            const tid=task.type||'num';
-            const typeOpts=['num','mc','mcmulti','tf','fill','sort','drag','open','image'].map(t=>{
-              const labels={num:'🔢 Tallsvar',mc:'🔘 Flervalg (1 svar)',mcmulti:'☑️ Flervalg (flere svar)',tf:'✅ Sant/Usant',fill:'✍️ Fyll inn ord',sort:'📊 Sortering',drag:'🔀 Dra og slipp',open:'📄 Åpen oppgave',image:'🖼️ Bilde-oppgave'};
-              return `<option value="${t}"${tid===t?' selected':''}>${labels[t]}</option>`;
-            }).join('');
-            let typeFields='';
-            if(tid==='num') typeFields=`<div class="frow"><div class="fg" style="margin:0"><label class="fl">Riktig svar (tall)</label><input class="fi" type="number" value="${task.ans||0}" onchange="updateTaskF('${subj.id}',${ti},${tki},'ans',parseFloat(this.value))"></div><div class="fg" style="margin:0"><label class="fl">Hint</label><input class="fi" value="${escH(task.hint||'')}" placeholder="Valgfritt hint..." onchange="updateTaskF('${subj.id}',${ti},${tki},'hint',this.value)"></div></div>`;
-            if(tid==='mc') typeFields=`<div style="margin-bottom:8px"><label class="fl">Alternativer — merk riktig svar</label>${[0,1,2,3].map(oi=>`<div class="opt-row"><input type="radio" class="opt-radio" name="mc_${subj.id}_${ti}_${tki}" ${task.correct===oi?'checked':''} onchange="updateTaskF('${subj.id}',${ti},${tki},'correct',${oi})"><input class="opt-inp" placeholder="Alt. ${String.fromCharCode(65+oi)}" value="${escH((task.opts&&task.opts[oi])||'')}" onchange="updOpt('${subj.id}',${ti},${tki},${oi},this.value)"></div>`).join('')}</div><div class="fg" style="margin:0"><label class="fl">Hint</label><input class="fi" value="${escH(task.hint||'')}" onchange="updateTaskF('${subj.id}',${ti},${tki},'hint',this.value)"></div>`;
-            if(tid==='mcmulti') typeFields=`<div style="margin-bottom:8px"><label class="fl">Alternativer — merk ALLE riktige svar</label>${[0,1,2,3].map(oi=>`<div class="opt-row"><input type="checkbox" class="opt-chk" ${(task.correct||[]).includes(oi)?'checked':''} onchange="updMCM('${subj.id}',${ti},${tki},${oi},this.checked)"><input class="opt-inp" placeholder="Alt. ${String.fromCharCode(65+oi)}" value="${escH((task.opts&&task.opts[oi])||'')}" onchange="updOpt('${subj.id}',${ti},${tki},${oi},this.value)"></div>`).join('')}</div>`;
-            if(tid==='tf') typeFields=`<div class="fg"><label class="fl">Riktig svar</label><select class="fsel" onchange="updateTaskF('${subj.id}',${ti},${tki},'correct',this.value==='true')"><option value="true" ${task.correct===true?'selected':''}>✅ Sant</option><option value="false" ${task.correct===false?'selected':''}>❌ Usant</option></select></div><div class="fg"><label class="fl">Hint</label><input class="fi" value="${escH(task.hint||'')}" onchange="updateTaskF('${subj.id}',${ti},${tki},'hint',this.value)"></div>`;
-            if(tid==='fill') typeFields=`<div class="fg"><label class="fl">Tekst — bruk ___ der elevene skal fylle inn</label><textarea class="fta" rows="2" onchange="updateTaskF('${subj.id}',${ti},${tki},'q',this.value)">${escH(task.q||'')}</textarea></div><div class="fg" style="margin:0"><label class="fl">Riktige svar (kommaseparert, ett per ___)</label><input class="fi" value="${(task.blanks||[]).join(',')}" placeholder="svar1,svar2" onchange="updateTaskF('${subj.id}',${ti},${tki},'blanks',this.value.split(',').map(s=>s.trim()))"></div>`;
-            if(tid==='sort') typeFields=`<div class="fg"><label class="fl">Elementer i RIKTIG rekkefølge (skill med |)</label><input class="fi" value="${(task.correct||[]).join('|')}" placeholder="Minst|Middels|Størst" onchange="setSortTask('${subj.id}',${ti},${tki},this.value)"></div>`;
-            if(tid==='drag') typeFields=`<div class="fg"><label class="fl">Ord/elementer å dra (skill med |)</label><input class="fi" value="${(task.items||[]).join('|')}" placeholder="Ord1|Ord2|Ord3" onchange="updateTaskF('${subj.id}',${ti},${tki},'items',this.value.split('|').map(s=>s.trim()))"></div><div class="fg" style="margin:0"><label class="fl">Kategorier (skill med |)</label><input class="fi" value="${(task.zones||[]).join('|')}" placeholder="Kategori A|Kategori B" onchange="updateTaskF('${subj.id}',${ti},${tki},'zones',this.value.split('|').map(s=>s.trim()))"></div>`;
-            if(tid==='open') typeFields=`<div class="fg"><label class="fl">Veiledning til eleven (vises under spørsmålet)</label><input class="fi" value="${escH(task.guidance||'')}" placeholder="F.eks: Skriv minst 3 setninger..." onchange="updateTaskF('${subj.id}',${ti},${tki},'guidance',this.value)"></div>`;
-            if(tid==='image') typeFields=`<div class="fg"><label class="fl">Last opp bilde</label><div class="img-upload-area" onclick="document.getElementById('timg_${subj.id}_${ti}_${tki}').click()">${task.imageData?`<img src="${task.imageData}" style="max-height:120px;border-radius:6px">`:`<div style="font-size:1.4rem">📷</div><div style="font-size:.78rem;color:var(--ink-s);margin-top:4px">Klikk for å laste opp</div>`}</div><input type="file" id="timg_${subj.id}_${ti}_${tki}" accept="image/*" style="display:none" onchange="uploadTaskImg('${subj.id}',${ti},${tki},this)"></div><div class="fg" style="margin:0"><label class="fl">Riktig svar</label><input class="fi" value="${escH(task.ans||'')}" placeholder="Hva skal elevene svare?" onchange="updateTaskF('${subj.id}',${ti},${tki},'ans',this.value)"></div>`;
-            const showQ=!['fill'].includes(tid);
-            return `<div class="task-ed">
-              <div class="task-ed-hdr">
-                <span style="font-size:.76rem;font-weight:700;color:var(--${subj.color})">Oppgave ${tki+1}</span>
-                <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-                  <select class="fsel" style="width:auto;padding:4px 8px;font-size:.75rem" onchange="changeType('${subj.id}',${ti},${tki},this.value)">${typeOpts}</select>
-                  <select class="fsel" style="width:auto;padding:4px 8px;font-size:.75rem" onchange="updateTaskF('${subj.id}',${ti},${tki},'diff',this.value)">
-                    <option value="easy"${task.diff==='easy'?' selected':''}>Lett</option>
-                    <option value="medium"${task.diff==='medium'?' selected':''}>Middels</option>
-                    <option value="hard"${task.diff==='hard'?' selected':''}>Krevende</option>
-                  </select>
-                  <button class="btn btn-d btn-xs" onclick="deleteTask('${subj.id}',${ti},${tki})">✕</button>
-                </div>
-              </div>
-              ${showQ?`<div class="fg" style="margin-bottom:9px"><label class="fl">Spørsmålstekst</label><textarea class="fta" style="min-height:48px" rows="2" onchange="updateTaskF('${subj.id}',${ti},${tki},'q',this.value)">${escH(task.q||'')}</textarea></div>`:''}
-              ${typeFields}
-            </div>`;
-          }).join('')}
-        </div>
-        <div style="margin-top:13px;padding-top:13px;border-top:1px solid var(--border)">
-          <button class="btn btn-p btn-sm" onclick="saveSubjectsNow()">💾 Lagre endringer</button>
-        </div>
-      </div>
-    </div>`;
+      const showQ=!['fill','sort','drag','image','crossword','wordsearch','listenwrite'].includes(tid);
+      html+='<div class="task-ed"><div class="task-ed-hdr">';
+      html+='<span style="font-size:.76rem;font-weight:700;color:var(--'+c+')">Oppgave '+(tki+1)+'</span>';
+      html+='<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">';
+      html+='<select class="fsel" style="width:auto;padding:4px 8px;font-size:.75rem" onchange="changeType(\''+sid+'\','+ti+','+tki+',this.value)">'+typeOptsHtml+'</select>';
+      html+='<select class="fsel" style="width:auto;padding:4px 8px;font-size:.75rem" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'diff\',this.value)">';
+      html+='<option value="easy"'+(task.diff==='easy'?' selected':'')+'>Lett</option>';
+      html+='<option value="medium"'+(task.diff==='medium'?' selected':'')+'>Middels</option>';
+      html+='<option value="hard"'+(task.diff==='hard'?' selected':'')+'>Krevende</option></select>';
+      html+='<button class="btn btn-d btn-xs" onclick="deleteTask(\''+sid+'\','+ti+','+tki+')">Slett</button></div></div>';
+      if(showQ){
+        html+='<div class="fg" style="margin-bottom:9px"><label class="fl">Spørsmål / oppgavetekst</label>';
+        html+='<textarea class="fta" style="min-height:52px" rows="2" onchange="updateTaskF(\''+sid+'\','+ti+','+tki+',\'q\',this.value)">'+escH(task.q||'')+'</textarea></div>';
+      }
+      html+=typeFields;
+      html+='</div>';
+    });
+    html+='</div>';
+    html+='<div style="margin-top:13px;padding-top:13px;border-top:1px solid var(--border)">';
+    html+='<button class="btn btn-p btn-sm" onclick="saveSubjectsNow()">💾 Lagre endringer</button></div>';
+    html+='</div></div>';
   });
   document.getElementById('tv-content').innerHTML=html;
 }
+
 window.togTopic=(_,ti2,subjId)=>{};
 window.togTopic=(subjId,ti)=>document.getElementById(`ti_${subjId}_${ti}`)?.classList.toggle('open');
 window.updateTF=(sId,ti,f,v)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti][f]=v;setSubjects(s);}
@@ -978,15 +1016,20 @@ window.updDiscQOpt=(sId,ti,dqi,oi,v)=>{const s=getSubjects();const dq=s.find(x=>
 window.updDiscQCorrect=(sId,ti,dqi,oi,checked,type)=>{const s=getSubjects();const dq=s.find(x=>x.id===sId).topics[ti].discQs[dqi];if(type==='mc'){dq.correct=oi;}else{if(!dq.correct)dq.correct=[];if(checked){if(!dq.correct.includes(oi))dq.correct.push(oi);}else{dq.correct=dq.correct.filter(x=>x!==oi);}}setSubjects(s);}
 window.discActivate=async(id,sId,ti)=>{
   const db=await initFirebase();
-  // Find question from topic if sId/ti provided, else fall back to global list
   let q=null;
+  // Try topic-specific first
   if(sId!==undefined&&ti!==undefined){
     const subjs=getSubjects();
     const topic=subjs.find(x=>x.id===sId)?.topics[ti];
     q=(topic?.discQs||[]).find(x=>x.id===id);
   }
+  // Fall back: search ALL topics
+  if(!q){
+    getSubjects().forEach(s=>s.topics.forEach(t=>(t.discQs||[]).forEach(dq=>{if(dq.id===id)q=dq;})));
+  }
+  // Fall back: global list
   if(!q) q=getDiscQs().find(x=>x.id===id);
-  if(!q)return;
+  if(!q){showToast('⚠️ Spørsmål ikke funnet');return;}
   if(db){
     await db.ref('ll_discussion').set({active:true,question:q,ts:Date.now()});
     await db.ref('ll_disc_answers').remove();
@@ -995,7 +1038,8 @@ window.discActivate=async(id,sId,ti)=>{
   setActiveDisc({id,q});
   showToast('▶ Spørsmål aktivert — elevene ser det nå!');
   renderTContent();
-};const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.km)t.km=[];t.km.push('');setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+};
+window.addKm=(sId,ti)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.km)t.km=[];t.km.push('');setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.updKm=(sId,ti,ki,v)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].km[ki]=v;setSubjects(s);}
 window.delKm=(sId,ti,ki)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].km.splice(ki,1);setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.addVideo=(sId,ti)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.videos)t.videos=[{title:t.videoTitle||'',url:t.videoUrl||''}];t.videos.push({title:'',url:''});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
@@ -1003,6 +1047,19 @@ window.updVideo=(sId,ti,vi,f,v)=>{const s=getSubjects();const t=s.find(x=>x.id==
 window.delVideo=(sId,ti,vi)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].videos.splice(vi,1);setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.addText=(sId,ti)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.texts)t.texts=[];t.texts.push({title:'',body:''});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.updText=(sId,ti,txi,f,v)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].texts[txi][f]=v;setSubjects(s);}
+window.uploadTextFile=(sId,ti,txi,inp)=>{
+  const f=inp.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const s=getSubjects();const t=s.find(x=>x.id===sId)?.topics[ti]?.texts[txi];
+    if(!t)return;
+    t.body=e.target.result;
+    if(!t.title)t.title=f.name.replace(/\.[^.]+$/,'');
+    setSubjects(s);renderTContent();
+    setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);
+  };
+  reader.readAsText(f);
+};
 window.delText=(sId,ti,txi)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].texts.splice(txi,1);setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.addImg=(sId,ti)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti];if(!t.images)t.images=[];t.images.push({data:'',caption:''});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.updImgCaption=(sId,ti,imi,v)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].images[imi].caption=v;setSubjects(s);}
@@ -1010,8 +1067,11 @@ window.uploadImg=(sId,ti,imi,inp)=>{const f=inp.files[0];if(!f)return;const r=ne
 window.delImg=(sId,ti,imi)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].images.splice(imi,1);setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.updOpt=(sId,ti,tki,oi,v)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti].tasks[tki];if(!t.opts)t.opts=[];t.opts[oi]=v;setSubjects(s);}
 window.updMCM=(sId,ti,tki,oi,checked)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti].tasks[tki];if(!t.correct)t.correct=[];if(checked){if(!t.correct.includes(oi))t.correct.push(oi);}else{t.correct=t.correct.filter(x=>x!==oi);}setSubjects(s);}
+window.updateTaskF=(sId,ti,tki,field,val)=>{const s=getSubjects();const t=s.find(x=>x.id===sId)?.topics[ti]?.tasks[tki];if(!t)return;t[field]=val;setSubjects(s);};
 window.setSortTask=(sId,ti,tki,val)=>{const items=val.split('|').map(s=>s.trim());const shuffled=[...items].sort(()=>Math.random()-.5);updateTaskF(sId,ti,tki,'correct',items);updateTaskF(sId,ti,tki,'items',shuffled);}
-window.changeType=(sId,ti,tki,newType)=>{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti].tasks[tki];t.type=newType;if(newType==='mc'&&!t.opts)t.opts=['','','',''];if(newType==='mcmulti'&&!t.opts){t.opts=['','','',''];t.correct=[];}if(newType==='sort'&&!t.correct)t.correct=[];if(newType==='drag'&&!t.zones){t.zones=['Kategori A','Kategori B'];t.items=[];}setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
+window.cwUpdRow=(sId,ti,tki,ri,field,val)=>{const s=getSubjects();const t=s.find(x=>x.id===sId)?.topics[ti]?.tasks[tki];if(!t)return;if(!t.cwRows)t.cwRows=[{word:'',hint:''}];t.cwRows[ri]=t.cwRows[ri]||{word:'',hint:''};t.cwRows[ri][field]=val;setSubjects(s);};
+window.cwAddRow=(sId,ti,tki)=>{const s=getSubjects();const t=s.find(x=>x.id===sId)?.topics[ti]?.tasks[tki];if(!t)return;if(!t.cwRows)t.cwRows=[];t.cwRows.push({word:'',hint:''});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);};
+window.cwDelRow=(sId,ti,tki,ri)=>{const s=getSubjects();const t=s.find(x=>x.id===sId)?.topics[ti]?.tasks[tki];if(!t||!t.cwRows)return;t.cwRows.splice(ri,1);setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);};{const s=getSubjects();const t=s.find(x=>x.id===sId).topics[ti].tasks[tki];t.type=newType;if(newType==='mc'&&!t.opts)t.opts=['','','',''];if(newType==='mcmulti'&&!t.opts){t.opts=['','','',''];t.correct=[];}if(newType==='sort'&&!t.correct)t.correct=[];if(newType==='drag'&&!t.zones){t.zones=['Kategori A','Kategori B'];t.items=[];}setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.deleteTask=(sId,ti,tki)=>{if(!confirm('Slett oppgaven?'))return;const s=getSubjects();s.find(x=>x.id===sId).topics[ti].tasks.splice(tki,1);setSubjects(s);renderTContent();}
 window.addTask=(sId,ti)=>{const s=getSubjects();s.find(x=>x.id===sId).topics[ti].tasks.push({type:'num',q:'Nytt spørsmål...',ans:0,diff:'easy',hint:''});setSubjects(s);renderTContent();setTimeout(()=>document.getElementById(`ti_${sId}_${ti}`)?.classList.add('open'),50);}
 window.addTopic=(sId)=>{const s=getSubjects();s.find(x=>x.id===sId).topics.push({id:'t_'+Date.now(),name:'Nytt tema',module:'',videos:[],texts:[],images:[],km:[],rules:[],examples:[],discQs:[],tasks:[{type:'num',q:'Første oppgave...',ans:0,diff:'easy',hint:''}]});setSubjects(s);renderTContent();}
@@ -1126,7 +1186,7 @@ function renderQbForm(){
 window.addQbQ=()=>{qbQs.push({type:'mc',text:'',opts:['','','',''],correct:0,exp:''});renderQbQs();};
 function renderQbQs(){
   const el=document.getElementById('qbQList'); if(!el) return;
-  const typeLabels={mc:'🔘 Flervalg (1)',mcmulti:'☑️ Flervalg (flere)',num:'🔢 Tallsvar',tf:'✅ Sant/Usant',fill:'✍️ Fyll inn',sort:'📊 Sortering',drag:'🔀 Dra og slipp',open:'📄 Åpen',image:'🖼️ Bilde-oppgave'};
+  const typeLabels={mc:'🔘 Flervalg (1)',mcmulti:'☑️ Flervalg (flere)',num:'🔢 Tallsvar',tf:'✅ Sant/Usant',fill:'✍️ Fyll inn',sort:'📊 Sortering',drag:'🔀 Dra og slipp',open:'📄 Åpen',image:'🖼️ Bilde-oppgave',crossword:'🔤 Kryssord',wordsearch:'🔍 Finn ordene',listenwrite:'🔊 Lytt og skriv'};
   el.innerHTML=qbQs.map((q,i)=>{
     const typeOpts=Object.entries(typeLabels).map(([v,l])=>`<option value="${v}"${q.type===v?' selected':''}>${l}</option>`).join('');
     let fields='';
@@ -1139,7 +1199,14 @@ function renderQbQs(){
     if(q.type==='drag') fields=`<div class="fg" style="margin-bottom:8px"><label class="fl">Ord/elementer å dra (skill med |)</label><input class="fi" value="${(q.items||[]).join('|')}" placeholder="Ord1|Ord2|Ord3" onchange="qbQs[${i}].items=this.value.split('|').map(s=>s.trim())"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Kategorier (skill med |)</label><input class="fi" value="${(q.zones||[]).join('|')}" placeholder="Kategori A|Kategori B" onchange="qbQs[${i}].zones=this.value.split('|').map(s=>s.trim())"></div>`;
     if(q.type==='open') fields=`<div class="fg" style="margin-bottom:8px"><label class="fl">Veiledning til eleven</label><input class="fi" placeholder="F.eks: Skriv minst 3 setninger..." value="${escH(q.guidance||'')}" onchange="qbQs[${i}].guidance=this.value"></div>`;
     if(q.type==='image') fields=`<div class="fg"><label class="fl">Last opp bilde</label><div class="img-upload-area" onclick="document.getElementById('qbimg_${i}').click()">${q.imageData?`<img src="${q.imageData}" style="max-height:100px;border-radius:6px">`:'📷 Klikk for å laste opp'}</div><input type="file" id="qbimg_${i}" accept="image/*" style="display:none" onchange="const r=new FileReader();r.onload=e=>{qbQs[${i}].imageData=e.target.result;renderQbQs();};r.readAsDataURL(this.files[0])"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Riktig svar</label><input class="fi" value="${escH(q.ans||'')}" placeholder="Hva skal elevene svare?" onchange="qbQs[${i}].ans=this.value"></div>`;
-    const showTextarea=!['fill','sort','drag','image'].includes(q.type);
+    if(q.type==='crossword'){
+      const rows=q.cwRows||[{word:'',hint:''}];
+      const rowsHtml=rows.map((r,ri)=>'<div class="frow" style="gap:6px;margin-bottom:6px"><input class="fi" style="flex:0 0 110px;text-transform:uppercase" placeholder="ORD" value="'+escH(r.word||'')+'" oninput="this.value=this.value.toUpperCase();if(!qbQs['+i+'].cwRows)qbQs['+i+'].cwRows=[];if(!qbQs['+i+'].cwRows['+ri+'])qbQs['+i+'].cwRows['+ri+']={word:\'\',hint:\'\'};qbQs['+i+'].cwRows['+ri+'].word=this.value"><input class="fi" style="flex:1" placeholder="Hint" value="'+escH(r.hint||'')+'" oninput="if(!qbQs['+i+'].cwRows)qbQs['+i+'].cwRows=[];if(!qbQs['+i+'].cwRows['+ri+'])qbQs['+i+'].cwRows['+ri+']={word:\'\',hint:\'\'};qbQs['+i+'].cwRows['+ri+'].hint=this.value"><button class="btn btn-d btn-xs" onclick="qbQs['+i+'].cwRows.splice('+ri+',1);renderQbQs()">✕</button></div>').join('');
+      fields='<div class="fg"><label class="fl">Ord og hint</label><div id="qbcwRows_'+i+'">'+rowsHtml+'</div><button class="btn btn-s btn-xs" style="margin-top:4px" onclick="if(!qbQs['+i+'].cwRows)qbQs['+i+'].cwRows=[];qbQs['+i+'].cwRows.push({word:\'\',hint:\'\'});renderQbQs()">+ Legg til ord</button></div>';
+    }
+    if(q.type==='wordsearch') fields=`<div class="fg"><label class="fl">Ord å finne (kommaseparert)</label><input class="fi" value="${escH((q.wsWords||[]).join(','))}" placeholder="HUND,KATT,FISK,FUGL" onchange="qbQs[${i}].wsWords=this.value.toUpperCase().split(',').map(s=>s.trim()).filter(Boolean)"></div><div class="fg" style="margin-bottom:8px"><label class="fl">Gridstørrelse</label><select class="fsel" onchange="qbQs[${i}].wsSize=parseInt(this.value)"><option value="10"${(q.wsSize||12)===10?' selected':''}>10×10</option><option value="12"${(q.wsSize||12)===12?' selected':''}>12×12</option><option value="15"${(q.wsSize||12)===15?' selected':''}>15×15</option></select></div>`;
+    if(q.type==='listenwrite') fields=`<div class="fg"><label class="fl">Tekst som skal leses opp</label><textarea class="fta" rows="3" placeholder="Skriv setningen eller teksten her..." onchange="qbQs[${i}].lwText=this.value">${escH(q.lwText||'')}</textarea></div><div class="fg" style="margin-bottom:8px"><label class="fl">Antall avspillinger</label><select class="fsel" onchange="qbQs[${i}].lwPlays=parseInt(this.value)"><option value="1"${(q.lwPlays||3)===1?' selected':''}>1 gang</option><option value="2"${(q.lwPlays||3)===2?' selected':''}>2 ganger</option><option value="3"${(q.lwPlays||3)===3?' selected':''}>3 ganger</option><option value="99"${(q.lwPlays||3)===99?' selected':''}>Ubegrenset</option></select></div>`;
+    const showTextarea=!['fill','sort','drag','image','crossword','wordsearch','listenwrite'].includes(q.type);
     return `<div class="qb-q">
       <div class="qb-q-hdr">
         <span style="font-size:.77rem;font-weight:700;color:var(--math)">Spørsmål ${i+1}</span>
@@ -1317,6 +1384,26 @@ function initStudent(){
   const subjects=getSubjects();
   if(subjects.length&&subjects[0].topics.length) sLoadTopic(subjects[0].id,0);
   sUpdateOverall();
+  // Start disc listener immediately so pulse shows and disc view works without clicking first
+  setupDiscStudentListener();
+  // Poll for active disc to show pulse on nav button
+  sCheckDiscPulse();
+}
+
+async function sCheckDiscPulse(){
+  const db=await initFirebase();
+  const checkActive=async()=>{
+    let active=false;
+    if(db){
+      try{const snap=await db.ref('ll_discussion').once('value');const d=snap.val();active=!!(d&&d.active&&d.question);}catch(e){}
+    } else {
+      active=!!getActiveDisc();
+    }
+    const pulse=document.getElementById('discPulse');
+    if(pulse) pulse.style.display=active?'inline-block':'none';
+  };
+  checkActive();
+  setInterval(checkActive,5000);
 }
 
 function buildStudentNav(){
@@ -1372,6 +1459,16 @@ window.sTab=t=>{
   document.getElementById('sp-'+t)?.classList.add('active');
 };
 
+function getYTEmbed(url){
+  if(!url) return '';
+  // Handle youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID
+  let id='';
+  const m=url.match(/(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  if(m) id=m[1];
+  if(!id) return '';
+  return `https://www.youtube.com/embed/${id}?rel=0`;
+}
+
 function sRenderFore(subj,topic){
   const c=subj.color;
   const langs=[{code:'so',name:'Somali'},{code:'fa',name:'Dari'},{code:'ar',name:'Arabisk'},{code:'fr',name:'Fransk'},{code:'ti',name:'Tigrinja'},{code:'pt',name:'Portugisisk'},{code:'en',name:'Engelsk'}];
@@ -1404,12 +1501,12 @@ function sRenderFore(subj,topic){
   const videos=topic.videos||(topic.videoUrl?[{title:topic.videoTitle||topic.name,url:topic.videoUrl}]:[]);
   if(videos.length){
     const vid=videos[0];
+    const embedUrl=getYTEmbed(vid.url||'');
+    const frameContent=embedUrl
+      ?'<iframe src="'+embedUrl+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allowfullscreen allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"></iframe>'
+      :'<div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:linear-gradient(135deg,#1c2b2a,#2a3a4a)"><div style="color:rgba(255,255,255,.4);font-size:.72rem">Ingen video ennå</div></div>';
     html+=`<div style="background:var(--ink);border-radius:14px;overflow:hidden;margin-bottom:14px" id="vidblock_${sCurrTi}">
-      <div style="height:185px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:linear-gradient(135deg,#1c2b2a,#2a3a4a);cursor:${vid.url?'pointer':'default'}"
-        id="vidclick_${sCurrTi}" onclick="${vid.url?`window.open('${escH(vid.url)}','_blank')`:''}">
-        <div style="width:50px;height:50px;background:var(--${c}-l);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">▶</div>
-        <div style="color:rgba(255,255,255,.4);font-size:.75rem">${vid.url?'Klikk for å se video':'Ingen video ennå'}</div>
-      </div>
+      <div id="vidframe_${sCurrTi}" style="position:relative;padding-bottom:52%;height:0;overflow:hidden">${frameContent}</div>
       <div style="padding:10px 15px;display:flex;align-items:center;justify-content:space-between">
         <div><div style="color:white;font-weight:600;font-size:.86rem" id="vidtitle_${sCurrTi}">${escH(vid.title||topic.name)}</div>
         <div style="color:rgba(255,255,255,.3);font-size:.7rem;margin-top:1px">${escH(subj.name)}</div></div>
@@ -1505,8 +1602,13 @@ window.sNavCarousel=(type,ti,dir,items,c)=>{
   const idx=_carouselIdx[key];
   const item=items[idx];
   if(type==='vid'){
-    const el=document.getElementById('vidclick_'+ti);
-    if(el){el.onclick=item.url?()=>window.open(item.url,'_blank'):null;el.querySelector('div:last-child').textContent=item.url?'Klikk for å se video':'Ingen video ennå';}
+    const frameEl=document.getElementById('vidframe_'+ti);
+    if(frameEl){
+      const embedUrl=getYTEmbed(item.url||'');
+      frameEl.innerHTML=embedUrl
+        ?`<iframe src="${embedUrl}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allowfullscreen allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"></iframe>`
+        :`<div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:linear-gradient(135deg,#1c2b2a,#2a3a4a)"><div style="color:rgba(255,255,255,.4);font-size:.72rem">Ingen video</div></div>`;
+    }
     const tEl=document.getElementById('vidtitle_'+ti);if(tEl)tEl.textContent=item.title||'';
     const cEl=document.getElementById('vidcount_'+ti);if(cEl)cEl.textContent=`${idx+1}/${items.length}`;
   } else if(type==='txt'){
@@ -1560,11 +1662,11 @@ function sRenderOpp(subj,topic,ti){
     <div class="pbar-sm"><div class="pbar-fill" id="sTaskBar" style="width:${pct}%;background:var(--${c}-l)"></div></div>
   </div>`;
   const dl={easy:'d-easy',medium:'d-medium',hard:'d-hard'}; const dn={easy:'Lett',medium:'Middels',hard:'Krevende'};
-  const typeLabel={num:'🔢',mc:'🔘',mcmulti:'☑️',tf:'✅',fill:'✍️',sort:'📊',drag:'🔀',open:'📄',image:'🖼️'};
+  const typeLabel={num:'🔢',mc:'🔘',mcmulti:'☑️',tf:'✅',fill:'✍️',sort:'📊',drag:'🔀',open:'📄',image:'🖼️',crossword:'🔤',wordsearch:'🔍',listenwrite:'🔊'};
   topic.tasks.forEach((task,tki)=>{
     const done=sCompletedTasks.has(tki);
     const tid=task.type||'num';
-    const qLabel=tid==='fill'?'Fyll inn de manglende ordene':tid==='sort'?'Sorter i riktig rekkefølge':tid==='drag'?'Dra elementer til riktig kategori':tid==='tf'?'Sant eller usant?':tid==='open'?'Åpen oppgave':tid==='image'?'Bilde-oppgave':escH(task.q||'Oppgave');
+    const qLabel=tid==='fill'?'Fyll inn de manglende ordene':tid==='sort'?'Sorter i riktig rekkefølge':tid==='drag'?'Dra elementer til riktig kategori':tid==='tf'?'Sant eller usant?':tid==='open'?'Åpen oppgave':tid==='image'?'Bilde-oppgave':tid==='crossword'?'🔤 Kryssord':tid==='wordsearch'?'🔍 Finn ordene':tid==='listenwrite'?'🔊 Lytt og skriv':escH(task.q||'Oppgave');
     html+=`<div class="tc${done?' done':''}" id="stc${tki}">
       <div class="tc-hdr" onclick="sTog(${tki})">
         <div class="tnum" style="${done?`background:var(--${c});color:white`:''}">${done?'✓':(tki+1)}</div>
@@ -1610,6 +1712,7 @@ function sRenderOpp(subj,topic,ti){
   topic.tasks.forEach((task,tki)=>{
     if((task.type||'num')==='sort') initSortTask(tki,task);
     if((task.type||'num')==='drag') initDragTask(tki,task);
+    if((task.type||'num')==='wordsearch') wsInitTouch(tki);
   });
 }
 
@@ -1683,6 +1786,12 @@ function sRenderTaskBody(task,tki,c){
           <input class="fi" placeholder="Svar..." id="sta${tki}" style="flex:1" onkeydown="if(event.key==='Enter')sCheckImg(${tki})">
           <button class="btn btn-p btn-sm" style="background:var(--${c})" onclick="sCheckImg(${tki})">Sjekk</button>
         </div>`;
+    case 'crossword':
+      return sRenderCrossword(task,tki,c);
+    case 'wordsearch':
+      return sRenderWordSearch(task,tki,c);
+    case 'listenwrite':
+      return sRenderListenWrite(task,tki,c);
     default:
       return `<div style="display:flex;gap:8px;margin-top:9px">
         <input class="fi" type="number" placeholder="Svar..." id="sta${tki}" style="flex:1">
@@ -1690,6 +1799,314 @@ function sRenderTaskBody(task,tki,c){
       </div>`;
   }
 }
+
+// Touch support for word search on mobile
+function wsInitTouch(tki){
+  document.querySelectorAll(`[id^="wsc_${tki}_"]`).forEach(el=>{
+    el.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];const el2=document.elementFromPoint(t.clientX,t.clientY);if(el2?.id?.startsWith('wsc_'+tki+'_')){const[,,,r,c]=el2.id.split('_');wsStart(tki,+r,+c);}},{passive:false});
+    el.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];const el2=document.elementFromPoint(t.clientX,t.clientY);if(el2?.id?.startsWith('wsc_'+tki+'_')){const[,,,r,c]=el2.id.split('_');wsOver(tki,+r,+c);}},{passive:false});
+    el.addEventListener('touchend',e=>{e.preventDefault();wsEnd(tki);},{passive:false});
+  });
+}
+// ══════════════════════════════════════════
+function buildCrossword(entries){
+  // entries: [{word,hint}]
+  const words=entries.map(e=>e.word.toUpperCase().replace(/[^A-ZÆØÅ]/g,'')).filter(w=>w.length>=2);
+  const SIZE=20;
+  const grid=Array.from({length:SIZE},()=>Array(SIZE).fill(''));
+  const placed=[];
+
+  function canPlace(word,r,c,horiz){
+    for(let i=0;i<word.length;i++){
+      const rr=horiz?r:r+i, cc=horiz?c+i:c;
+      if(rr<0||rr>=SIZE||cc<0||cc>=SIZE) return false;
+      if(grid[rr][cc]&&grid[rr][cc]!==word[i]) return false;
+      // Check neighbours (no two parallel words touching)
+      if(!grid[rr][cc]){
+        const before=horiz?grid[rr]?.[cc-1]:grid[rr-1]?.[cc];
+        const after=horiz?grid[rr]?.[cc+1]:grid[rr+1]?.[cc];
+        if(i===0&&before) return false;
+        if(i===word.length-1&&after) return false;
+        const above=horiz?grid[rr-1]?.[cc]:grid[rr]?.[cc-1];
+        const below=horiz?grid[rr+1]?.[cc]:grid[rr]?.[cc+1];
+        // Allow if intersecting another word, but not adjacent empty space creating parallel
+        if(above&&above!==word[i]||below&&below!==word[i]) return false;
+      }
+    }
+    return true;
+  }
+  function place(word,r,c,horiz){
+    for(let i=0;i<word.length;i++){const rr=horiz?r:r+i,cc=horiz?c+i:c;grid[rr][cc]=word[i];}
+    placed.push({word,r,c,horiz});
+  }
+
+  // Place first word in center horizontal
+  if(words.length>0){
+    const w=words[0];
+    const r=Math.floor(SIZE/2),c=Math.floor((SIZE-w.length)/2);
+    place(w,r,c,true);
+  }
+  // Try to intersect remaining words
+  for(let wi=1;wi<words.length;wi++){
+    const word=words[wi];
+    let best=null;
+    for(const p of placed){
+      for(let pi=0;pi<p.word.length;pi++){
+        for(let wi2=0;wi2<word.length;wi2++){
+          if(p.word[pi]!==word[wi2]) continue;
+          const horiz=!p.horiz;
+          const r=horiz?p.r+(p.horiz?0:pi)-0:p.r+(p.horiz?0:pi)-wi2;
+          const c=horiz?p.c+(p.horiz?pi:0)-wi2:p.c+(p.horiz?pi:0)-0;
+          if(canPlace(word,r,c,horiz)){
+            best={r,c,horiz};break;
+          }
+        }
+        if(best)break;
+      }
+      if(best)break;
+    }
+    if(best) place(word,best.r,best.c,best.horiz);
+    else{
+      // Place anywhere that fits
+      for(let r=2;r<SIZE-2&&!best;r++)for(let c=2;c<SIZE-2&&!best;c++){
+        if(canPlace(word,r,c,true))best={r,c,horiz:true};
+        else if(canPlace(word,r,c,false))best={r,c,horiz:false};
+      }
+      if(best) place(word,best.r,best.c,best.horiz);
+    }
+  }
+  // Trim grid
+  let minR=SIZE,maxR=0,minC=SIZE,maxC=0;
+  placed.forEach(p=>{
+    minR=Math.min(minR,p.r);maxR=Math.max(maxR,p.r+(p.horiz?0:p.word.length-1));
+    minC=Math.min(minC,p.c);maxC=Math.max(maxC,p.c+(p.horiz?p.word.length-1:0));
+  });
+  const rows=maxR-minR+1, cols=maxC-minC+1;
+  const trimmed=Array.from({length:rows},(_,r)=>Array.from({length:cols},(_,c)=>grid[r+minR][c+minC]));
+  const trimPlaced=placed.map(p=>({...p,r:p.r-minR,c:p.c-minC}));
+  // Number the words
+  let num=1;
+  const numbered=trimPlaced.map(p=>({...p,num:num++}));
+  return {grid:trimmed,rows,cols,placed:numbered};
+}
+
+function sRenderCrossword(task,tki,c){
+  // Support both cwRows (new) and cwEntries (old pipe-separated format)
+  let entries=[];
+  if(task.cwRows&&task.cwRows.length){
+    entries=task.cwRows.map(r=>({word:(r.word||'').toUpperCase().trim(),hint:(r.hint||'').trim()})).filter(e=>e.word.length>=2);
+  } else if(task.cwEntries){
+    entries=task.cwEntries.split('\n').map(l=>{const p=l.split('|');return{word:(p[0]||'').trim().toUpperCase(),hint:(p[1]||'').trim()};}).filter(e=>e.word.length>=2);
+  }
+  if(!entries.length) return `<div style="background:var(--coral-pale);color:var(--coral);padding:12px 14px;border-radius:10px;font-size:.85rem">⚠️ Ingen ord er lagt til ennå. Læreren må redigere oppgaven.</div>`;
+  const cw=buildCrossword(entries);
+  // Store for checking
+  window['_cw_'+tki]=cw;
+  window['_cwe_'+tki]=entries;
+  const gridHTML=`<div class="cw-grid" style="grid-template-columns:repeat(${cw.cols},34px)">
+    ${cw.grid.map((row,r)=>row.map((cell,cc)=>{
+      if(!cell) return `<div class="cw-cell black"></div>`;
+      const p=cw.placed.find(p=>p.r===r&&p.c===cc);
+      const num=p?`<span class="cw-num">${p.num}</span>`:'';
+      return `<div class="cw-cell" id="cwc_${tki}_${r}_${cc}">${num}<input maxlength="1" id="cwi_${tki}_${r}_${cc}" oninput="this.value=this.value.toUpperCase();cwMove(${tki},${r},${cc})" style="text-transform:uppercase"></div>`;
+    }).join('')).join('')}
+  </div>`;
+  const acrossClues=cw.placed.filter(p=>p.horiz).map(p=>`<div class="cw-clue"><span>${p.num}.</span>${entries.find(e=>e.word===p.word)?.hint||p.word}</div>`).join('');
+  const downClues=cw.placed.filter(p=>!p.horiz).map(p=>`<div class="cw-clue"><span>${p.num}.</span>${entries.find(e=>e.word===p.word)?.hint||p.word}</div>`).join('');
+  return `<div style="overflow-x:auto">${gridHTML}</div>
+    <div class="cw-clues">
+      <div><div style="font-weight:700;font-size:.8rem;margin-bottom:6px;color:var(--${c})">→ Vannrett</div>${acrossClues}</div>
+      <div><div style="font-weight:700;font-size:.8rem;margin-bottom:6px;color:var(--${c})">↓ Loddrett</div>${downClues}</div>
+    </div>
+    <button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:10px" onclick="sCheckCrossword(${tki})">Sjekk kryssord</button>`;
+}
+
+window.cwMove=(tki,r,c)=>{
+  // Move focus to next cell in word
+  const cw=window['_cw_'+tki];if(!cw)return;
+  // Find which placed word this cell belongs to
+  const p=cw.placed.find(pw=>pw.horiz?(pw.r===r&&c>=pw.c&&c<pw.c+pw.word.length):(pw.c===c&&r>=pw.r&&r<pw.r+pw.word.length));
+  if(!p)return;
+  const nr=p.horiz?r:r+1, nc=p.horiz?c+1:c;
+  const next=document.getElementById(`cwi_${tki}_${nr}_${nc}`);
+  if(next)next.focus();
+};
+
+window.sCheckCrossword=tki=>{
+  const cw=window['_cw_'+tki];if(!cw)return;
+  let correct=0,total=0;
+  cw.grid.forEach((row,r)=>row.forEach((cell,c)=>{
+    if(!cell)return;total++;
+    const inp=document.getElementById(`cwi_${tki}_${r}_${c}`);
+    const cellEl=document.getElementById(`cwc_${tki}_${r}_${c}`);
+    if(!inp||!cellEl)return;
+    if(inp.value.toUpperCase()===cell){correct++;cellEl.classList.add('correct');cellEl.classList.remove('wrong');}
+    else{cellEl.classList.add('wrong');cellEl.classList.remove('correct');}
+  }));
+  if(correct===total){sFb(tki,true,'🎉 Perfekt! Alle riktige!');sMarkDone(tki);}
+  else sFb(tki,false,`${correct} av ${total} riktige. Prøv igjen!`);
+};
+
+// ══════════════════════════════════════════
+// 🔍 FINN ORDENE
+// ══════════════════════════════════════════
+function buildWordSearch(words,size){
+  size=size||12;
+  const grid=Array.from({length:size},()=>Array(size).fill(''));
+  const placed=[];
+  const dirs=[[0,1],[1,0],[1,1],[0,-1],[-1,0],[-1,-1],[1,-1],[-1,1]];
+  const alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ';
+
+  for(const word of words){
+    let ok=false;
+    for(let attempts=0;attempts<200&&!ok;attempts++){
+      const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
+      const r=Math.floor(Math.random()*size), c=Math.floor(Math.random()*size);
+      let fits=true;
+      const cells=[];
+      for(let i=0;i<word.length;i++){
+        const rr=r+dr*i,cc=c+dc*i;
+        if(rr<0||rr>=size||cc<0||cc>=size){fits=false;break;}
+        if(grid[rr][cc]&&grid[rr][cc]!==word[i]){fits=false;break;}
+        cells.push([rr,cc]);
+      }
+      if(fits){
+        cells.forEach(([rr,cc],i)=>grid[rr][cc]=word[i]);
+        placed.push({word,cells});ok=true;
+      }
+    }
+  }
+  // Fill blanks
+  for(let r=0;r<size;r++)for(let c=0;c<size;c++)
+    if(!grid[r][c])grid[r][c]=alpha[Math.floor(Math.random()*alpha.length)];
+  return{grid,placed};
+}
+
+function sRenderWordSearch(task,tki,c){
+  const words=(task.wsWords||[]).map(w=>w.toUpperCase().trim()).filter(Boolean);
+  if(!words.length) return `<div style="background:var(--coral-pale);color:var(--coral);padding:12px 14px;border-radius:10px;font-size:.85rem">⚠️ Ingen ord er lagt til i denne oppgaven ennå. Læreren må redigere oppgaven og lagre ord.</div>`;
+  const size=task.wsSize||12;
+  const ws=buildWordSearch(words,size);
+  window['_ws_'+tki]=ws;
+  window['_wsFound_'+tki]=new Set();
+  window['_wsSel_'+tki]=[];
+
+  const gridHTML=`<div class="ws-grid" style="grid-template-columns:repeat(${size},30px)">
+    ${ws.grid.map((row,r)=>row.map((cell,cc)=>
+      `<div class="ws-cell" id="wsc_${tki}_${r}_${cc}" onmousedown="wsStart(${tki},${r},${cc})" onmouseover="wsOver(${tki},${r},${cc})" onmouseup="wsEnd(${tki})">${cell}</div>`
+    ).join('')).join('')}
+  </div>`;
+
+  const wordList=`<div class="ws-words">${words.map(w=>`<div class="ws-word" id="wsw_${tki}_${w}">${w}</div>`).join('')}</div>`;
+  return `<div style="font-size:.85rem;color:var(--ink-s);margin-bottom:6px">Finn alle ordene! Klikk og dra for å markere.</div>
+    ${wordList}
+    <div style="overflow-x:auto">${gridHTML}</div>`;
+}
+
+window._wsDragging=false;
+window.wsStart=(tki,r,c)=>{
+  window._wsDragging=true;
+  window['_wsSel_'+tki]=[[r,c]];
+  document.querySelectorAll(`[id^="wsc_${tki}_"]`).forEach(el=>el.classList.remove('selecting'));
+  document.getElementById(`wsc_${tki}_${r}_${c}`)?.classList.add('selecting');
+};
+window.wsOver=(tki,r,c)=>{
+  if(!window._wsDragging)return;
+  const sel=window['_wsSel_'+tki];
+  if(!sel||!sel.length)return;
+  const[r0,c0]=sel[0];
+  // Determine direction
+  const dr=r-r0,dc=c-c0;
+  const len=Math.max(Math.abs(dr),Math.abs(dc));
+  if(!len)return;
+  const stepR=dr?dr/Math.abs(dr):0, stepC=dc?dc/Math.abs(dc):0;
+  // Only allow straight lines
+  if(dr&&dc&&Math.abs(dr)!==Math.abs(dc))return;
+  const newSel=[];
+  for(let i=0;i<=len;i++)newSel.push([r0+stepR*i,c0+stepC*i]);
+  window['_wsSel_'+tki]=newSel;
+  document.querySelectorAll(`[id^="wsc_${tki}_"]`).forEach(el=>{if(!el.classList.contains('found'))el.classList.remove('selecting');});
+  newSel.forEach(([rr,cc])=>document.getElementById(`wsc_${tki}_${rr}_${cc}`)?.classList.add('selecting'));
+};
+window.wsEnd=(tki)=>{
+  window._wsDragging=false;
+  const sel=window['_wsSel_'+tki]||[];
+  const ws=window['_ws_'+tki];if(!ws)return;
+  // Get selected text
+  const text=sel.map(([r,c])=>ws.grid[r]?.[c]||'').join('');
+  const textRev=text.split('').reverse().join('');
+  const found=window['_wsFound_'+tki];
+  for(const p of ws.placed){
+    if((p.word===text||p.word===textRev)&&!found.has(p.word)){
+      found.add(p.word);
+      sel.forEach(([r,c])=>{const el=document.getElementById(`wsc_${tki}_${r}_${c}`);if(el){el.classList.add('found');el.classList.remove('selecting');}});
+      document.getElementById(`wsw_${tki}_${p.word}`)?.classList.add('found');
+      if(found.size===ws.placed.length){sFb(tki,true,'🎉 Alle ord funnet!');sMarkDone(tki);}
+      return;
+    }
+  }
+  // Deselect
+  document.querySelectorAll(`[id^="wsc_${tki}_"]`).forEach(el=>{if(!el.classList.contains('found'))el.classList.remove('selecting');});
+};
+document.addEventListener('mouseup',()=>{window._wsDragging=false;});
+
+// ══════════════════════════════════════════
+// 🔊 LYTT OG SKRIV
+// ══════════════════════════════════════════
+function sRenderListenWrite(task,tki,c){
+  const plays=task.lwPlays||3;
+  const unlimited=plays===99;
+  const lwText=task.lwText||'';
+  const playsLabel=unlimited?'':'Du kan spille av '+plays+' '+(plays===1?'gang':'ganger')+'.';
+  const countLabel=unlimited?'':plays+' avspilling'+(plays===1?'':'er')+' igjen';
+  return `<div style="font-size:.88rem;color:var(--ink-s);margin-bottom:10px">
+    Lytt nøye og skriv ned det du hører. ${playsLabel}</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <button class="lw-btn" id="lwbtn${tki}" style="background:var(--${c})" onclick="lwPlay(${tki},${JSON.stringify(lwText)},${plays})">🔊 Spill av</button>
+      <span id="lwcount${tki}" style="font-size:.8rem;color:var(--ink-s)">${countLabel}</span>
+    </div>
+    <textarea class="open-ta" id="lwta${tki}" placeholder="Skriv det du hørte her..." rows="3"></textarea>
+    <button class="btn btn-p btn-sm" style="background:var(--${c});margin-top:8px" onclick="lwCheck(${tki},${JSON.stringify(lwText)})">Sjekk svar</button>`;
+}
+
+window._lwPlaysLeft={};
+window.lwPlay=(tki,lwText,lwPlays)=>{
+  const btn=document.getElementById('lwbtn'+tki);
+  const countEl=document.getElementById('lwcount'+tki);
+  if(!lwText){showToast('⚠️ Ingen tekst å spille av');return;}
+  const plays=lwPlays||3;
+  const unlimited=plays===99;
+  if(window._lwPlaysLeft[tki]===undefined)window._lwPlaysLeft[tki]=plays;
+  if(!unlimited&&window._lwPlaysLeft[tki]<=0){showToast('Ingen flere avspillinger igjen');return;}
+  window.speechSynthesis.cancel();
+  const utt=new SpeechSynthesisUtterance(lwText);
+  utt.lang='nb-NO';utt.rate=0.85;
+  utt.onstart=()=>{if(btn){btn.textContent='⏸ Spilles av...';btn.disabled=true;}};
+  utt.onend=()=>{
+    if(btn){btn.textContent='🔊 Spill av';btn.disabled=false;}
+    if(!unlimited){
+      window._lwPlaysLeft[tki]--;
+      const left=window._lwPlaysLeft[tki];
+      if(countEl)countEl.textContent=left<=0?'Ingen flere avspillinger':left+' avspilling'+(left===1?'':'er')+' igjen';
+      if(left<=0&&btn){btn.disabled=true;btn.style.opacity='.4';}
+    }
+  };
+  speechSynthesis.speak(utt);
+};
+
+window.lwCheck=(tki,correct)=>{
+  const ans=(document.getElementById('lwta'+tki)?.value||'').trim();
+  if(!ans){showToast('⚠️ Skriv ned det du hørte');return;}
+  // Fuzzy match — ignore case and punctuation
+  const norm=s=>s.toLowerCase().replace(/[.,!?;:]/g,'').replace(/\s+/g,' ').trim();
+  const a=norm(ans), b=norm(correct);
+  const words_a=a.split(' '), words_b=b.split(' ');
+  const matched=words_b.filter(w=>words_a.includes(w)).length;
+  const pct=Math.round(matched/words_b.length*100);
+  if(pct>=90){sFb(tki,true,`✅ Riktig! (${pct}% treff)`);sMarkDone(tki);}
+  else if(pct>=60){sFb(tki,false,`Nesten! ${pct}% av ordene stemmer. Prøv igjen.`);}
+  else{sFb(tki,false,`Ikke helt riktig. ${pct}% av ordene stemmer. Lytt en gang til.`);}
+};
 
 // Shared task completion helper
 function sMarkDone(tki){
@@ -2232,59 +2649,48 @@ window.openBoardView=()=>{
 
 function buildBoardHTML(q,cfg){
   const cfgStr=cfg?JSON.stringify(cfg):'null';
-  return `<!DOCTYPE html><html lang="no"><head><meta charset="UTF-8">
-  <title>LærerLab — Tavlevisning</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'DM Sans',sans-serif;background:#0f172a;color:white;min-height:100vh;padding:40px}
-    .q-box{background:rgba(255,255,255,.07);border-radius:20px;padding:36px 44px;margin-bottom:36px;border:1px solid rgba(255,255,255,.1)}
-    .q-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:10px}
-    .q-text{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;line-height:1.3}
-    .answers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-    .ans-card{background:rgba(255,255,255,.09);border-radius:14px;padding:18px 22px;font-size:1.05rem;line-height:1.5;border:1px solid rgba(255,255,255,.08);animation:pop .3s ease}
-    @keyframes pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
-    .count{font-size:.8rem;color:rgba(255,255,255,.35);margin-bottom:20px}
-    .logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.1rem;color:#2ab89f;margin-bottom:30px}
-    .waiting{color:rgba(255,255,255,.3);font-size:1.1rem;margin-top:20px;font-style:italic}
-  </style>
-  </head><body>
-  <div class="logo">LærerLab — Tavlevisning</div>
-  <div class="q-box">
-    <div class="q-label">Spørsmål</div>
-    <div class="q-text" id="qtext">${escapeHtml(q?.text||'')}</div>
-    ${(q?.type==='mc'||q?.type==='mcmulti')&&q?.opts?.length?`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">${q.opts.map((o,i)=>`<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 18px;font-size:.95rem">${String.fromCharCode(65+i)}. ${escapeHtml(o)}</div>`).join('')}</div>`:''}
-  </div>
-  <div class="count" id="count">Venter på svar...</div>
-  <div class="answers-grid" id="grid"></div>
-  <scr`+'ipt'+`>
-  function escapeHtml(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  const cfg=${cfgStr};
-  const qId='${q?.id||''}';
-  const seen=new Set();
-  function addCard(ans){
-    if(seen.has(ans.ts))return;seen.add(ans.ts);
-    const d=document.createElement('div');d.className='ans-card';d.textContent=ans.answer||'';
-    document.getElementById('grid').prepend(d);
-    document.getElementById('count').textContent=seen.size+' svar';
-  }
-  if(cfg&&cfg.apiKey){
-    const loadFB=src=>new Promise(r=>{const s=document.createElement('script');s.src=src;s.onload=r;document.head.appendChild(s);});
-    loadFB('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js').then(()=>
-    loadFB('https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js')).then(()=>{
-      firebase.initializeApp(cfg);
-      firebase.database().ref('ll_disc_answers').on('value',snap=>{
-        const data=snap.val()||{};
-        document.getElementById('grid').innerHTML='';seen.clear();
-        Object.values(data).forEach(a=>addCard(a));
-        if(!seen.size)document.getElementById('count').textContent='Venter på svar...';
-      });
-    });
-  } else {
-    document.getElementById('count').textContent='Firebase ikke satt opp — kan ikke vise sanntidssvar';
-  }
-  function escapeHtml(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  <`+'/scr'+'ipt'+`></body></html>`;
+  const opts=(q?.type==='mc'||q?.type==='mcmulti')&&q?.opts?.length
+    ?q.opts.map((o,i)=>`<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 18px;font-size:.95rem">${String.fromCharCode(65+i)}. ${escH(o)}</div>`).join(''):'';
+  const qtext=escH(q?.text||'');
+  const js=[
+    'const cfg='+cfgStr+';',
+    'const seen=new Set();',
+    'function addCard(a){if(seen.has(a.ts))return;seen.add(a.ts);',
+    'const d=document.createElement("div");d.className="ans-card";d.textContent=a.answer||"";',
+    'document.getElementById("grid").prepend(d);',
+    'document.getElementById("count").textContent=seen.size+" svar";}',
+    'if(cfg&&cfg.apiKey){',
+    'const loadFB=src=>new Promise(r=>{const s=document.createElement("script");s.src=src;s.onload=r;document.head.appendChild(s);});',
+    'loadFB("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js")',
+    '.then(()=>loadFB("https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"))',
+    '.then(()=>{firebase.initializeApp(cfg);',
+    'firebase.database().ref("ll_disc_answers").on("value",snap=>{',
+    'const data=snap.val()||{};document.getElementById("grid").innerHTML="";seen.clear();',
+    'Object.values(data).forEach(a=>addCard(a));',
+    'if(!seen.size)document.getElementById("count").textContent="Venter på svar...";});});',
+    '}else{document.getElementById("count").textContent="Firebase ikke satt opp";}'
+  ].join('\n');
+  return '<!DOCTYPE html><html lang="no"><head><meta charset="UTF-8">'
+    +'<title>LærerLab \u2014 Tavlevisning</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:\'DM Sans\',sans-serif;background:#0f172a;color:white;min-height:100vh;padding:40px}'
+    +'.q-box{background:rgba(255,255,255,.07);border-radius:20px;padding:36px 44px;margin-bottom:36px;border:1px solid rgba(255,255,255,.1)}'
+    +'.q-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:10px}'
+    +'.q-text{font-family:\'Fraunces\',serif;font-size:2rem;font-weight:700;line-height:1.3}'
+    +'.answers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}'
+    +'.ans-card{background:rgba(255,255,255,.09);border-radius:14px;padding:18px 22px;font-size:1.05rem;animation:pop .3s ease}'
+    +'@keyframes pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}'
+    +'.count{font-size:.8rem;color:rgba(255,255,255,.35);margin-bottom:20px}'
+    +'.logo{font-family:\'Fraunces\',serif;font-weight:900;font-size:1.1rem;color:#2ab89f;margin-bottom:30px}'
+    +'</style></head><body>'
+    +'<div class="logo">L\u00e6rerLab \u2014 Tavlevisning</div>'
+    +'<div class="q-box"><div class="q-label">Sp\u00f8rsm\u00e5l</div>'
+    +'<div class="q-text">'+qtext+'</div>'
+    +(opts?'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">'+opts+'</div>':'')
+    +'</div><div class="count" id="count">Venter p\u00e5 svar...</div>'
+    +'<div class="answers-grid" id="grid"></div>'
+    +'<script>'+js+'<'+ '/script>'
+    +'</body></html>';
 }
 function escapeHtml(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
@@ -2296,74 +2702,72 @@ window.sShowDiscussion=()=>{
   discDiv.style.display='block';
   document.querySelectorAll('#studentSb .sb-item').forEach(e=>e.classList.remove('active'));
   document.getElementById('navDiscBtn')?.classList.add('active');
-  // Clear old poll
-  if(window._discPollInterval){clearInterval(window._discPollInterval);window._discPollInterval=null;}
-  // Initial render
-  renderStudentDiscussion(true);
-  // Listen via Firebase or poll carefully
+  renderStudentDiscussion(null);
   setupDiscStudentListener();
 };
 
 async function setupDiscStudentListener(){
   const db=await initFirebase();
   if(db){
-    // Remove old listener
     if(window._discFBRef) window._discFBRef.off();
     window._discFBRef=db.ref('ll_discussion');
     window._discFBRef.on('value',snap=>{
       const data=snap.val();
       const newActive=data&&data.active&&data.question?data.question:null;
       const currId=window._discCurrentQId||null;
-      // Only re-render if question changed, not while typing
       if((newActive?.id||null)!==currId){
         window._discCurrentQId=newActive?.id||null;
-        renderStudentDiscussion(true,newActive);
+        renderStudentDiscussion(newActive);
       }
     });
   } else {
-    // Fallback: poll but never re-render if same question is showing
+    if(window._discPollInterval) clearInterval(window._discPollInterval);
     window._discPollInterval=setInterval(()=>{
       const a=getActiveDisc();
       const newId=a?.id||null;
       if(newId!==window._discCurrentQId){
         window._discCurrentQId=newId;
-        renderStudentDiscussion(true);
+        renderStudentDiscussion(null);
       }
     },3000);
   }
 }
 
-async function renderStudentDiscussion(fullRender=false, overrideQ=null){
+async function renderStudentDiscussion(activeQ){
   const discDiv=document.getElementById('sDiscView');
-  if(!discDiv||discDiv.style.display==='none') return;
+  if(!discDiv) return;
+  discDiv.style.display='block';
 
-  let activeQ=overrideQ;
-  if(activeQ===null && !overrideQ){
+  // If no question passed in, fetch from Firebase or localStorage
+  if(!activeQ){
     const db=await initFirebase();
     if(db){
       const snap=await db.ref('ll_discussion').once('value');
       const data=snap.val();
-      activeQ=data&&data.active&&data.question?data.question:null;
+      if(data&&data.active&&data.question) activeQ=data.question;
     } else {
       const a=getActiveDisc();
-      activeQ=a?getDiscQs().find(x=>x.id===a.id)||null:null;
+      if(a){
+        let found=null;
+        getSubjects().forEach(s=>s.topics.forEach(t=>(t.discQs||[]).forEach(dq=>{if(dq.id===a.id)found=dq;})));
+        activeQ=found||getDiscQs().find(x=>x.id===a.id)||null;
+      }
     }
   }
 
+  const pulse=document.getElementById('discPulse');
   if(!activeQ){
+    if(pulse) pulse.style.display='none';
     discDiv.innerHTML=`<div style="padding:40px 20px;text-align:center">
       <div style="font-size:3rem;margin-bottom:16px">💬</div>
       <div style="font-family:'Fraunces',serif;font-weight:700;font-size:1.3rem;margin-bottom:8px">Diskusjon</div>
       <div style="color:var(--ink-s);font-size:.88rem">Ingen aktiv diskusjon akkurat nå.<br>Læreren aktiverer et spørsmål når klassen er klar.</div>
     </div>`;
-    const pulse=document.getElementById('discPulse');
-    if(pulse) pulse.style.display='none';
     return;
   }
-
-  const pulse=document.getElementById('discPulse');
   if(pulse) pulse.style.display='inline-block';
 
+  // Already answered?
   const alreadyAnswered=LS.get('ll_disc_answered_'+activeQ.id+(currentUser?.id||''));
   if(alreadyAnswered){
     discDiv.innerHTML=`<div style="padding:30px 20px;max-width:600px">
@@ -2376,15 +2780,13 @@ async function renderStudentDiscussion(fullRender=false, overrideQ=null){
     return;
   }
 
-  // Don't re-render form if already showing same question (preserves typed text)
-  const existingQId=discDiv.dataset.activeQId;
-  if(existingQId===activeQ.id) return;
+  // Don't re-render if same question is already showing (preserves typing)
+  if(discDiv.dataset.activeQId===activeQ.id) return;
   discDiv.dataset.activeQId=activeQ.id;
 
   let inputHtml='';
   if(activeQ.type==='open'){
-    inputHtml=`
-      <div style="margin-bottom:10px">${symBar('discStudAns')}</div>
+    inputHtml=`<div style="margin-bottom:10px">${symBar('discStudAns')}</div>
       <textarea class="fta" id="discStudAns" rows="4" style="min-height:100px" placeholder="Skriv svaret ditt her..."></textarea>`;
   } else if(activeQ.type==='mc'||activeQ.type==='mcmulti'){
     inputHtml=`<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
@@ -2394,31 +2796,27 @@ async function renderStudentDiscussion(fullRender=false, overrideQ=null){
       </label>`).join('')}
     </div>`;
   } else if(activeQ.type==='fill'){
-    // Split text on ___ and render input fields
     const parts=(activeQ.text||'').split('___');
-    inputHtml=`<div style="font-size:1rem;line-height:2;margin-top:10px;padding:14px;background:var(--mist);border-radius:10px">
+    inputHtml=`<div style="font-size:1rem;line-height:2.2;margin-top:10px;padding:14px;background:var(--mist);border-radius:10px">
       ${parts.map((p,pi)=>escH(p)+(pi<parts.length-1?`<input id="discFill_${pi}" class="blank-inp" style="width:120px;margin:0 4px" placeholder="...">`:'')  ).join('')}
-    </div>
-    <div style="margin-top:10px">${symBar('discFill_0')}</div>`;
+    </div>`;
   } else if(activeQ.type==='filldrop'){
     const parts=(activeQ.text||'').split('___');
-    const opts=activeQ.opts||[];
     inputHtml=`<div style="font-size:1rem;line-height:2.4;margin-top:10px;padding:14px;background:var(--mist);border-radius:10px">
-      ${parts.map((p,pi)=>escH(p)+(pi<parts.length-1?`<select id="discDrop_${pi}" class="fsel" style="width:auto;display:inline-block;margin:0 5px;padding:4px 8px">
+      ${parts.map((p,pi)=>escH(p)+(pi<parts.length-1?`<select id="discDrop_${pi}" class="fsel" style="width:auto;display:inline-block;margin:0 5px">
         <option value="">— velg —</option>
-        ${opts.map(o=>`<option value="${escH(o)}">${escH(o)}</option>`).join('')}
+        ${(activeQ.opts||[]).map(o=>`<option value="${escH(o)}">${escH(o)}</option>`).join('')}
       </select>`:'')  ).join('')}
     </div>`;
   } else if(activeQ.type==='drag'){
     const items=[...(activeQ.items||[])].sort(()=>Math.random()-.5);
-    const zones=activeQ.zones||[];
     inputHtml=`<div id="discDragArea" style="margin-top:12px">
       <div style="font-size:.78rem;font-weight:600;color:var(--ink-s);margin-bottom:8px">Dra kortene til riktig kategori:</div>
       <div class="drag-bank" id="discDragBank" style="min-height:48px;margin-bottom:14px">
-        ${items.map(it=>`<div class="drag-chip" draggable="true" ondragstart="discDragStart(event,'${escH(it)}')" style="cursor:grab">${escH(it)}</div>`).join('')}
+        ${items.map(it=>`<div class="drag-chip" draggable="true" ondragstart="discDragStart(event,'${escH(it)}')">${escH(it)}</div>`).join('')}
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-        ${zones.map(z=>`<div class="drop-zone" id="discZone_${escH(z)}" ondragover="event.preventDefault()" ondrop="discDrop(event,'${escH(z)}')" style="min-height:80px">
+        ${(activeQ.zones||[]).map(z=>`<div class="drop-zone" id="discZone_${escH(z)}" ondragover="event.preventDefault()" ondrop="discDrop(event,'${escH(z)}')">
           <div style="font-size:.72rem;font-weight:700;color:var(--math);margin-bottom:6px">${escH(z)}</div>
         </div>`).join('')}
       </div>
@@ -2428,71 +2826,7 @@ async function renderStudentDiscussion(fullRender=false, overrideQ=null){
   discDiv.innerHTML=`<div style="max-width:600px;padding:20px 0">
     <div style="background:var(--math-pale);border:2px solid var(--math);border-radius:14px;padding:20px 24px;margin-bottom:20px">
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--math);margin-bottom:8px">💬 Spørsmål fra læreren</div>
-      <div style="font-size:1.05rem;font-weight:600;line-height:1.5">${renderMath(escH(activeQ.text))}</div>
-    </div>
-    ${inputHtml}
-    <button class="btn btn-p" style="margin-top:14px;width:100%" onclick="discStudSubmit('${activeQ.id}','${activeQ.type}')">📤 Send svar</button>
-  </div>`;
-}
-
-async function renderStudentDiscussion(){
-  const discDiv=document.getElementById('sDiscView');if(!discDiv||discDiv.style.display==='none')return;
-  const db=await initFirebase();
-  let activeQ=null;
-  if(db){
-    const snap=await db.ref('ll_discussion').once('value');
-    const data=snap.val();
-    if(data&&data.active&&data.question) activeQ=data.question;
-  } else {
-    // fallback localStorage (same device demo)
-    const a=getActiveDisc();
-    if(a){activeQ=getDiscQs().find(x=>x.id===a.id)||null;}
-  }
-
-  if(!activeQ){
-    discDiv.innerHTML=`<div style="padding:40px 20px;text-align:center">
-      <div style="font-size:3rem;margin-bottom:16px">💬</div>
-      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:1.3rem;margin-bottom:8px">Diskusjon</div>
-      <div style="color:var(--ink-s);font-size:.88rem">Ingen aktiv diskusjon akkurat nå.<br>Læreren aktiverer et spørsmål når klassen er klar.</div>
-    </div>`;
-    document.getElementById('discPulse')?.style&&(document.getElementById('discPulse').style.display='none');
-    return;
-  }
-
-  // Show pulse
-  const pulse=document.getElementById('discPulse');
-  if(pulse) pulse.style.display='inline-block';
-
-  const alreadyAnswered=LS.get('ll_disc_answered_'+activeQ.id+currentUser?.id);
-  if(alreadyAnswered){
-    discDiv.innerHTML=`<div style="padding:30px 20px;max-width:600px">
-      <div style="background:var(--green-pale);border:1px solid var(--green);border-radius:13px;padding:20px 24px;text-align:center">
-        <div style="font-size:1.5rem;margin-bottom:8px">✅</div>
-        <div style="font-weight:600;color:var(--green)">Svaret ditt er sendt!</div>
-        <div style="font-size:.82rem;color:var(--ink-s);margin-top:5px">Venter på at læreren viser svarene på tavlen.</div>
-      </div>
-    </div>`;
-    return;
-  }
-
-  let inputHtml='';
-  if(activeQ.type==='open'){
-    inputHtml=`
-      <div style="margin-bottom:10px">${symBar('discStudAns')}</div>
-      <textarea class="fta" id="discStudAns" rows="4" style="min-height:100px" placeholder="Skriv svaret ditt her..."></textarea>`;
-  } else {
-    inputHtml=`<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-      ${(activeQ.opts||[]).map((o,oi)=>`<label style="display:flex;align-items:center;gap:11px;padding:11px 15px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-size:.9rem;transition:all .15s" onmouseover="this.style.borderColor='var(--math)'" onmouseout="this.style.borderColor='var(--border)'">
-        <input type="${activeQ.type==='mc'?'radio':'checkbox'}" name="discOpt" value="${oi}" style="accent-color:var(--math)">
-        <span>${String.fromCharCode(65+oi)}. ${escH(o)}</span>
-      </label>`).join('')}
-    </div>`;
-  }
-
-  discDiv.innerHTML=`<div style="max-width:600px;padding:20px 0">
-    <div style="background:var(--math-pale);border:2px solid var(--math);border-radius:14px;padding:20px 24px;margin-bottom:20px">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--math);margin-bottom:8px">💬 Spørsmål fra læreren</div>
-      <div style="font-size:1.05rem;font-weight:600;line-height:1.5">${renderMath(escH(activeQ.text))}</div>
+      <div style="font-size:1.05rem;font-weight:600;line-height:1.5">${renderMath(escH(activeQ.text||''))}</div>
     </div>
     ${inputHtml}
     <button class="btn btn-p" style="margin-top:14px;width:100%" onclick="discStudSubmit('${activeQ.id}','${activeQ.type}')">📤 Send svar</button>
